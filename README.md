@@ -60,13 +60,21 @@ Running from a Git checkout, the app computes the version from history the same 
 
 ## License
 
-Traqen is free for personal and other uses permitted by the
-[PolyForm Strict License 1.0.0](LICENSE), including its permissions for listed
-noncommercial organizations. This license grants no rights to modify or
-redistribute the software.
+Traqen is source-available under the [PolyForm Strict License 1.0.0](LICENSE).
+Use is free of charge for the purposes permitted by that license, including:
+
+- Any noncommercial purpose.
+- The personal uses listed in the license, such as personal study and hobby
+  projects, without any anticipated commercial application.
+- Use by charitable organizations, educational institutions, public research
+  organizations, public safety or health organizations, environmental protection
+  organizations, and government institutions, regardless of funding source or
+  obligations resulting from funding.
+
+This license grants no rights to modify or redistribute Traqen or create works
+based on it. The full license governs; this summary does not grant additional
+permissions.
 
 Commercial use outside those permissions requires a separate paid license.
 Contact [Emrah Diril](mailto:emrah@diril.org) for pricing and a commercial
 agreement before beginning such use.
-
-Traqen is source-available under these terms.
