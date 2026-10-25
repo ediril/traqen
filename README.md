@@ -46,7 +46,7 @@ Links are checked when added, when their traq is opened (if the last check is mo
 
 Versions are `<major>.<work-day>.<increment>`, computed from Git history the same way as in hook-line-sync:
 
-- [`version.json`](version.json) sets the major number and its baseline commit. We're on major `0` (pre-release), counted from the first commit, `ac21db1` ("add docs", June 15, 2026).
+- [`version.json`](version.json) sets the major number and its baseline commit. We're on major `0` (pre-release), counted from the first commit, `e2b266b` ("traqen: first public release", October 25, 2026).
 - The baseline day is `0`. Each later date with commits advances the work-day number by one, however many idle days pass.
 - The increment counts that date's commits, starting at `1`. Only first-parent history counts, using each commit's committer date.
 
