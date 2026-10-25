@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% from "macros.html" import csrf, project_picker, source_badge with context %}
+{% block title %}Save to Traqen{% endblock %}
+{% block body_class %}popup{% endblock %}
+{% block solo %}
+<div class="popup-head d-flex align-items-baseline justify-content-between border-bottom">
+  <span class="brand fs-6">traqen</span><span class="small text-body-secondary">Save this page</span>
+</div>
+{% if error %}
+<div class="alert alert-danger m-3" role="alert">{{ error }}</div>
+{% else %}
+<form method="post" action="/capture" class="capture d-grid" data-capture>
+  {{ csrf() }}
+  <input type="hidden" name="url" value="{{ page.url }}">
+  <input type="hidden" name="title" value="{{ page.title }}">
+  {% if page.popup %}<input type="hidden" name="popup" value="1">{% endif %}
+  <input type="hidden" name="tz" value="UTC" data-timezone>
+
+  <div class="d-flex align-items-start gap-3">
+    {{ source_badge(source) }}
+    <div class="min-w-0">
+      <div class="capture-title fw-semibold">{{ page.title or page.url }}</div>
+      <div class="mono-meta">{{ page.url | domain }}</div>
+    </div>
+  </div>
+
+  {% if already_there %}
+  <div class="alert alert-danger" role="alert" data-already-there>That traq already has this page.</div>
+  {% endif %}
+  {# A new traq would duplicate the page where an open traq in the picked
+     project (or, with no project, among traqs without one) has it. Shown for
+     the picked project only, with Save disabled. #}
+  <div class="alert alert-danger" role="alert" data-dup-alert {% if selected not in held_in %}hidden{% endif %}>
+    {%- for group in groups if group.key in held_in %}
+    <span class="d-inline-flex align-items-center gap-2" data-held-in="{{ group.key }}" {% if group.key != selected %}hidden{% endif %}>Already in <span class="badge rounded-pill dup-where" data-dup-where>{{ group.name }}</span></span>
+    {%- endfor %}
+  </div>
+
+  <fieldset class="traq-picker d-grid">
+    <legend class="picker-heading">Save to</legend>
+    <div class="list-group list-group-flush picker-list">
+      <div class="list-group-item picker-option new d-flex flex-wrap align-items-center">
+        <label class="d-inline-flex align-items-center fw-semibold">
+          <input type="radio" name="traq" value="new" checked> New traq
+        </label>
+        {{ project_picker(projects, project, "w-100") }}
+      </div>
+    </div>
+
+    {# Recent traqs in each project; only the picked project's are shown, and
+       only those can be picked. #}
+    {% set shown = groups | selectattr("key", "equalto", selected) | first %}
+    <div class="picker-section d-grid" data-recent-section {% if not shown.recent %}hidden{% endif %}>
+      <div class="picker-heading">Recent traqs</div>
+      {% for group in groups %}
+      <fieldset class="list-group list-group-flush picker-list" data-recent-for="{{ group.key }}" {% if group.key != selected %}hidden disabled{% endif %}>
+        {% with rows = group.recent %}{% include "_capture_rows.html" %}{% endwith %}
+      </fieldset>
+      {% endfor %}
+    </div>
+
+    <div class="picker-section d-grid">
+      <div class="picker-heading">Search</div>
+      <input class="form-control" type="search" placeholder="Find a traq to add it to…" aria-label="Find a traq" autocomplete="off" data-traq-search>
+      <div class="list-group list-group-flush picker-list" data-traq-results hidden></div>
+      <p class="small text-body-secondary mb-0" data-no-matches hidden>No other open traqs match.</p>
+    </div>
+  </fieldset>
+
+  <label class="capture-note d-grid">
+    <span>Note <span class="text-body-secondary">(optional)</span></span>
+    <textarea class="form-control" name="note" rows="3" placeholder="Why does this matter?">{{ page.note }}</textarea>
+  </label>
+
+  <div class="d-flex justify-content-end gap-2">
+    <button class="btn btn-link" type="button" data-close>Cancel</button>
+    <button class="btn btn-primary" type="submit" data-save {% if selected in held_in %}disabled{% endif %}>Save</button>
+  </div>
+</form>
+{% endif %}
+{% endblock %}

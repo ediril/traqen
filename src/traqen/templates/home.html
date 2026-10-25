@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% from "macros.html" import traq_rows %}
+{% block title %}{{ project.name ~ " · " if project }}Traqen{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ project.name if project else "Everything" }}</h1>
+{% if traqs %}
+{{ traq_rows(traqs, user, show_project=not project) }}
+{% else %}
+<p class="text-body-secondary">No traqs{{ " in this project" if project }} yet.</p>
+{% endif %}
+{% endblock %}

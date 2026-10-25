@@ -1,0 +1,19 @@
+- [ ] Reminders attached to a traq ("follow up on Acme SSO Friday"), with due ones shown on the home view. For keeping work from going stale, not a to-do app.
+- [ ] Decide whether open questions and decisions should stand out from plain text (e.g. found and listed on their own), or stay as ordinary lines in the traq.
+- [ ] Show what changed on the lists, not only on link cards: mark traqs with changes since you last looked in Everything and project lists, so you can see a PR merged overnight without opening each traq.
+- [ ] Show when each link was last checked, and add a "refresh now" action on a link card. Without live state, say so instead of looking current.
+- [ ] Turn on Google sign-in. It is off for now (`TRAQEN_SIGN_IN=none`: everyone is one local user, localhost only).
+  - Register a Google OAuth client (redirect URI `{TRAQEN_BASE_URL}/auth/google/callback`), set `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`, and switch to `TRAQEN_SIGN_IN=google`.
+  - Decide what happens to traqs created by the local user (e.g. hand them to the first Google account that signs in).
+  - Get the OAuth consent screen verified before inviting other users.
+  - Don't trust a session by `users.id` alone: ids get reused after a user is deleted (no AUTOINCREMENT), so an old cookie can open the next account, and cookies from sign-in-off mode stay signed in as the local user after switching to Google. Keep the Google account id in the session and check it, and refuse the local user while sign-in is on.
+- [ ] Bring back a Connections page when GitHub/Jira OAuth is turned on: see and disconnect connected accounts (revoke the GitHub grant), and a ready-to-send note asking an org admin to approve Traqen. Removed for now; connecting still works from a link card's "Connect" button.
+  - GitHub orgs that restrict third-party apps need owner approval; SAML-protected orgs also need the token SSO-authorized.
+- [ ] More live sources, one at a time, read-only with the narrowest scopes:
+  - First, before adding a third OAuth provider: describe each provider once in a table (endpoints, scope, token format, label) instead of the `if provider == "github"` / else-Jira branches in `integrations.py`, and call it `jira` everywhere (settings say `atlassian`). Have a link check return one result type (live, unavailable, or failed) instead of a snapshot or an exception.
+  - Google Docs/Drive: per-file access through the Google Picker (`drive.file` scope), avoiding broad Drive scopes and the security review they need.
+  - Slack: needs an app install, often admin-approved, and non-Marketplace apps get tight API rate limits.
+  - Then Figma, Linear, Notion, Confluence, depending on who uses Traqen.
+- [ ] Harden page fetches (`live/net.py`) before many people use Traqen:
+  - Don't reuse connections for page fetches. Connections are keyed by IP address, so two sites behind the same CDN address can share one, which skips the second site's certificate check and can make it show "Not live" by mistake.
+  - Try a site's addresses in the order the system returns them, falling back to the next one. Today they're sorted as text, so an IPv6 address often wins, and checks fail on machines without IPv6.

@@ -1,0 +1,64 @@
+{% from "macros.html" import source_badge %}
+<div class="mb-3">
+  <h1 class="traq-title mb-0{% if traq.status == 'done' %} is-done{% endif %}" data-traq-title>{{ traq.title }}</h1>
+  <p class="d-flex flex-wrap align-items-center gap-2 mt-2 mb-0">
+    <span class="badge rounded-pill quiet-pill">Created</span>
+    <span class="font-monospace text-body-secondary" style="font-size: 12.5px">{{ traq.created_at | local_time(user.timezone) }}</span>
+    {% if traq.status == "done" %}<span class="badge rounded-pill quiet-pill">Done</span>{% endif %}
+  </p>
+</div>
+{% for block in blocks %}
+{% if block.kind == "text" %}
+<div class="traq-text pre-wrap" data-traq-text>{{ block.text | linkify }}</div>
+{% else %}
+{% set link = block.link %}
+{% set state = load_json(link.state) or {} %}
+{% set status = {
+  "live": ("live", "Live", "text-success"),
+  "unavailable": ("dead", "Not live", "text-danger"),
+  "error": ("failed", "Couldn’t check", "text-warn"),
+}.get(link.live, ("pending", "Checking…", "text-body-secondary")) %}
+<div class="card link-card{% if block.changes %} changed{% endif %}" data-link-card>
+  <div class="card-body d-flex align-items-start">
+    {{ source_badge(block.source) }}
+    <div class="link-body flex-grow-1 min-w-0 d-grid">
+      {# 1. What it is: the title on one line, the domain right after it. #}
+      <div class="d-flex align-items-baseline gap-2 min-w-0">
+        <a class="link-title text-truncate min-w-0" href="{{ link.url }}" target="_blank" rel="noopener" title="{{ link.title or link.url }}">{{ link.title or link.url }}</a>
+        <span class="mono-meta flex-shrink-0">{{ link.url | domain }}</span>
+      </div>
+
+      {# 2. Where it stands: status, then what changed since you last opened
+         this traq (or why it isn't live). #}
+      <div class="link-status-row d-flex flex-wrap align-items-center">
+        <span class="link-status d-inline-flex align-items-center fw-medium {{ status[2] }}" data-status="{{ status[0] }}"><span class="status-dot"></span>{{ status[1] }}</span>
+        {% if link.live == "unavailable" %}
+          <span class="text-body-secondary">{{ link.live_reason }}</span>
+          {% if link.live_connect %}
+            <a class="btn btn-sm btn-outline-secondary" href="/connections/{{ link.live_connect }}/start?next={{ ('/traqs/' ~ traq.id) | urlencode }}">{{ "Reconnect" if link.live_connect in connected else "Connect" }} {{ SOURCE_LABELS[link.live_connect] }}</a>
+          {% elif link.live_fix_url %}<a href="{{ link.live_fix_url }}" target="_blank" rel="noopener">Fix access</a>{% endif %}
+        {% else %}
+          {% if link.live == "error" %}<span class="text-body-secondary">{{ link.live_reason }}{% if state %}; showing last known state{% endif %}</span>{% endif %}
+          {% if block.changes %}
+            {% for line in block.changes %}<span class="chip" data-change>{{ line }}</span>{% endfor %}
+          {% elif state %}
+            <span class="chip quiet">No change</span>
+          {% endif %}
+        {% endif %}
+      </div>
+
+      {# 3. The details. #}
+      {% if state.fields %}
+      <div class="d-flex flex-wrap column-gap-3 row-gap-1" style="font-size: 13px">
+        {% for name, value in state.fields.items() %}
+          {% if name == "Comments" %}<span><span class="fw-semibold">{{ value }}</span> comment{{ "" if value == 1 else "s" }}</span>
+          {% else %}<span><span class="text-body-secondary">{{ name }}</span> <span class="fw-semibold">{{ value }}</span></span>{% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if state.preview %}<p class="text-body-secondary clamp-2 mb-0" style="font-size: 13px">{{ state.preview }}</p>{% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endfor %}

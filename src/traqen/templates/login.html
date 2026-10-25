@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Sign in · Traqen{% endblock %}
+{% block body_class %}d-flex align-items-center justify-content-center min-vh-100 px-3 py-4{% endblock %}
+{% block solo %}
+<section class="solo-card d-grid text-center">
+  <div class="brand big">traqen</div>
+  <p class="lede">Keep the things you’re tracking together, and see when they change.</p>
+  {% if error %}<p class="text-danger mb-0">{{ error }}</p>{% endif %}
+  <a class="btn btn-primary" href="/auth/google?next={{ next | urlencode }}">Sign in with Google</a>
+</section>
+{% endblock %}

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Saved · Traqen</title>
+  <style>
+    body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, sans-serif; color: #44474e; margin: 32px 24px; text-align: center; }
+    @media (prefers-color-scheme: dark) { body { background: #1c1d21; color: #c3c5ca; } }
+  </style>
+</head>
+<body>
+  {% if popup %}
+  <p data-saved hidden>Saved to {{ traq.title }}. You can close this window.</p>
+  <script>
+    // The bookmarklet opened this as a popup: close it. If the browser won't
+    // let a page close its own window, say it's saved instead.
+    window.close();
+    setTimeout(() => (document.querySelector("[data-saved]").hidden = false), 200);
+  </script>
+  {% else %}
+  <p>Saved to {{ traq.title }}. <a href="{{ url }}">Back to the page</a></p>
+  <script>
+    // Opened in this tab (the popup was blocked): go back to the page.
+    location.replace({{ url | tojson }});
+  </script>
+  {% endif %}
+</body>
+</html>

@@ -1,0 +1,434 @@
+/* Traqen's theme for Bootstrap 5.3.
+   Mostly Bootstrap's own variables set to Traqen's colors, type, and shapes,
+   then the few things Bootstrap has no equivalent for (marked below). */
+
+/* Colors ------------------------------------------------------------------ */
+
+:root, [data-bs-theme="light"] {
+  --t-sidebar: #efede7;
+  --t-pill: #e6e2d9;
+  --t-surface: #ffffff;
+  --t-ink-2: #44474e;
+  --t-hover: rgba(28, 29, 32, 0.05);
+  --t-line-strong: #d8d4cb;
+  --t-accent-soft: #e2efe9;
+  --t-primary-hover: #175a49;
+  --t-changed-soft: #fbf2d9;
+  --t-changed-line: #ecc66a;
+  --t-warn: #b7791f;
+  --t-on-accent: #fff;
+  --t-shadow: 0 1px 2px rgba(28, 29, 32, 0.05), 0 4px 14px rgba(28, 29, 32, 0.04);
+
+  --bs-body-bg: #f7f6f2;
+  --bs-body-bg-rgb: 247, 246, 242;
+  --bs-body-color: #1c1d20;
+  --bs-body-color-rgb: 28, 29, 32;
+  --bs-emphasis-color: #1c1d20;
+  --bs-emphasis-color-rgb: 28, 29, 32;
+  --bs-secondary-color: #80848c;
+  --bs-secondary-color-rgb: 128, 132, 140;
+  --bs-tertiary-bg: var(--t-sidebar);
+  --bs-tertiary-bg-rgb: 239, 237, 231;
+  --bs-border-color: #e7e4dd;
+  --bs-primary: #1d6b57;
+  --bs-primary-rgb: 29, 107, 87;
+  --bs-success: #1d6b57;
+  --bs-success-rgb: 29, 107, 87;
+  --bs-danger: #b4321f;
+  --bs-danger-rgb: 180, 50, 31;
+  --bs-link-color: #1d6b57;
+  --bs-link-color-rgb: 29, 107, 87;
+  --bs-link-hover-color: #175a49;
+  --bs-link-hover-color-rgb: 23, 90, 73;
+  --bs-focus-ring-color: rgba(29, 107, 87, 0.28);
+}
+
+[data-bs-theme="dark"] {
+  --t-sidebar: #17181b;
+  --t-pill: #2c2f35;
+  --t-surface: #1c1d21;
+  --t-ink-2: #c3c5ca;
+  --t-hover: rgba(255, 255, 255, 0.05);
+  --t-line-strong: #383b41;
+  --t-accent-soft: #1b322b;
+  --t-primary-hover: #74d1b3;
+  --t-changed-soft: #221e15;
+  --t-changed-line: #6e5a24;
+  --t-warn: #e0a54c;
+  --t-on-accent: #0c211b;
+  --t-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+
+  --bs-body-bg: #131416;
+  --bs-body-bg-rgb: 19, 20, 22;
+  --bs-body-color: #ececee;
+  --bs-body-color-rgb: 236, 236, 238;
+  --bs-emphasis-color: #ececee;
+  --bs-emphasis-color-rgb: 236, 236, 238;
+  --bs-secondary-color: #8a8e96;
+  --bs-secondary-color-rgb: 138, 142, 150;
+  --bs-tertiary-bg: var(--t-sidebar);
+  --bs-tertiary-bg-rgb: 23, 24, 27;
+  --bs-border-color: #2a2c31;
+  --bs-primary: #5cc4a4;
+  --bs-primary-rgb: 92, 196, 164;
+  --bs-success: #5cc4a4;
+  --bs-success-rgb: 92, 196, 164;
+  --bs-danger: #ef7a63;
+  --bs-danger-rgb: 239, 122, 99;
+  --bs-link-color: #5cc4a4;
+  --bs-link-color-rgb: 92, 196, 164;
+  --bs-link-hover-color: #74d1b3;
+  --bs-link-hover-color-rgb: 116, 209, 179;
+  --bs-focus-ring-color: rgba(92, 196, 164, 0.3);
+}
+
+/* Type and shapes --------------------------------------------------------- */
+
+:root {
+  --bs-body-font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --bs-font-monospace: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --bs-body-font-size: 14.5px;
+  --bs-body-line-height: 1.55;
+  --bs-border-radius: 8px;
+  --bs-border-radius-sm: 7px;
+  --bs-border-radius-lg: 10px;
+  --bs-border-radius-xl: 14px;
+}
+body { -webkit-font-smoothing: antialiased; }
+/* Bootstrap's display utilities (d-flex, d-grid, …) are !important and come after
+   its [hidden] rule, so they'd show a hidden element; hidden always wins here. */
+[hidden] { display: none !important; }
+a { text-decoration: none; }
+a:hover { text-decoration: underline; text-underline-offset: 2px; }
+.small, small { font-size: 12.5px; }
+
+/* Bootstrap components, set to Traqen's look ------------------------------ */
+
+.btn {
+  --bs-btn-font-size: 13.5px;
+  --bs-btn-font-weight: 500;
+  --bs-btn-padding-x: 14px;
+  --bs-btn-padding-y: 7px;
+  --bs-btn-line-height: normal;
+  --bs-btn-border-radius: 8px;
+  --bs-btn-focus-box-shadow: 0 0 0 3px var(--bs-focus-ring-color);
+}
+.btn-sm { --bs-btn-font-size: 12.5px; --bs-btn-padding-x: 12px; --bs-btn-padding-y: 4px; --bs-btn-border-radius: 7px; }
+.btn-primary {
+  --bs-btn-bg: var(--bs-primary);
+  --bs-btn-border-color: var(--bs-primary);
+  --bs-btn-color: var(--t-on-accent);
+  --bs-btn-hover-bg: var(--t-primary-hover);
+  --bs-btn-hover-border-color: var(--t-primary-hover);
+  --bs-btn-hover-color: var(--t-on-accent);
+  --bs-btn-active-bg: var(--t-primary-hover);
+  --bs-btn-active-border-color: var(--t-primary-hover);
+  --bs-btn-active-color: var(--t-on-accent);
+  --bs-btn-disabled-bg: var(--bs-primary);
+  --bs-btn-disabled-border-color: var(--bs-primary);
+  --bs-btn-disabled-color: var(--t-on-accent);
+  --bs-btn-disabled-opacity: .45;
+}
+/* The plain button: a white face with a quiet border. */
+.btn-outline-secondary {
+  --bs-btn-bg: var(--t-surface);
+  --bs-btn-color: var(--bs-body-color);
+  --bs-btn-border-color: var(--t-line-strong);
+  --bs-btn-hover-bg: var(--t-surface);
+  --bs-btn-hover-color: var(--bs-body-color);
+  --bs-btn-hover-border-color: var(--bs-secondary-color);
+  --bs-btn-active-bg: var(--t-surface);
+  --bs-btn-active-color: var(--bs-body-color);
+  --bs-btn-active-border-color: var(--bs-secondary-color);
+}
+.btn-danger {
+  --bs-btn-bg: var(--bs-danger);
+  --bs-btn-border-color: var(--bs-danger);
+  --bs-btn-hover-bg: var(--bs-danger);
+  --bs-btn-hover-border-color: var(--bs-danger);
+}
+.btn-link {
+  --bs-btn-color: var(--t-ink-2);
+  --bs-btn-hover-color: var(--bs-body-color);
+  --bs-btn-active-color: var(--bs-body-color);
+  text-decoration: none;
+}
+.btn-link:hover { background: var(--t-hover); }
+
+.form-control, .form-select {
+  font-size: inherit; padding: 7px 10px; border-color: var(--t-line-strong);
+  background-color: var(--t-surface);
+}
+.form-control-sm, .form-select-sm { font-size: 13px; line-height: normal; padding: 5px 8px; }
+.form-select { padding-right: 2rem; }
+.form-control:focus, .form-select:focus {
+  background-color: var(--t-surface); border-color: var(--bs-primary); box-shadow: 0 0 0 3px var(--bs-focus-ring-color);
+}
+.form-check-input:checked { background-color: var(--bs-primary); border-color: var(--bs-primary); }
+.form-check-input:focus { border-color: var(--bs-primary); box-shadow: 0 0 0 3px var(--bs-focus-ring-color); }
+/* Switches: a solid track with a white knob; .danger turns red when on. */
+.form-switch { display: flex; align-items: center; gap: 10px; padding-left: 0; margin: 0; font-size: 13.5px; }
+.form-switch .form-check-input, .form-switch .form-check-input:focus {
+  --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-5 -5 10 10'%3e%3ccircle r='4' fill='%23fff'/%3e%3c/svg%3e");
+}
+.form-switch .form-check-input {
+  width: 34px; height: 20px; margin: 0; flex: none; border: 0; border-radius: 999px;
+  background-color: var(--t-line-strong); cursor: pointer;
+}
+.form-switch .form-check-input.danger:checked { background-color: var(--bs-danger); }
+.form-switch .form-check-label { cursor: pointer; }
+
+.nav-pills {
+  --bs-nav-link-padding-x: 10px;
+  --bs-nav-link-padding-y: 5px;
+  --bs-nav-link-font-size: 13.5px;
+  --bs-nav-link-color: var(--t-ink-2);
+  --bs-nav-link-hover-color: var(--bs-body-color);
+  --bs-nav-pills-border-radius: 7px;
+  --bs-nav-pills-link-active-bg: var(--t-accent-soft);
+  --bs-nav-pills-link-active-color: var(--bs-body-color);
+}
+.nav-pills .nav-link:hover { background: var(--t-hover); text-decoration: none; }
+.nav-pills .nav-link.active { font-weight: 600; position: relative; }
+
+.list-group {
+  --bs-list-group-bg: transparent;
+  --bs-list-group-color: var(--bs-body-color);
+  --bs-list-group-border-color: var(--bs-border-color);
+  --bs-list-group-action-color: var(--bs-body-color);
+  --bs-list-group-action-hover-color: var(--bs-body-color);
+  --bs-list-group-action-hover-bg: var(--t-hover);
+  --bs-list-group-action-active-bg: var(--t-hover);
+  --bs-list-group-border-radius: 10px;
+}
+.list-group-item-action:hover { text-decoration: none; }
+
+.card {
+  --bs-card-bg: var(--t-surface);
+  --bs-card-border-color: var(--bs-border-color);
+  --bs-card-border-radius: 10px;
+  --bs-card-spacer-x: 14px;
+  --bs-card-spacer-y: 12px;
+}
+.card.changed { --bs-card-bg: var(--t-changed-soft); --bs-card-border-color: var(--t-changed-line); }
+
+.modal {
+  --bs-modal-bg: var(--bs-body-bg);
+  --bs-modal-border-color: var(--bs-border-color);
+  --bs-modal-border-radius: 14px;
+  --bs-modal-inner-border-radius: 13px;
+  --bs-modal-padding: 16px;
+  --bs-modal-header-padding: 16px;
+  --bs-modal-footer-gap: 8px;
+  --bs-modal-box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+  --bs-modal-header-border-width: 0;
+  --bs-modal-footer-border-width: 0;
+}
+.modal-backdrop { --bs-backdrop-opacity: .35; }
+/* A dialog is one padded form: title, fields, then its buttons. */
+.dialog-form { padding: 16px; gap: 12px; }
+.dialog-form.small { gap: 14px; }
+.dialog-form.small .dialog-bar { margin-top: 2px; }
+.dialog-title { margin: 0; font-size: 16px; font-weight: 600; line-height: normal; }
+.search-form { padding: 10px; }
+.search-form .form-control { padding: 10px 12px; font-size: 16px; }
+.project-picker { flex: 1; min-width: 0; }
+.project-picker .form-select, .project-picker .form-control { max-width: 220px; }
+
+.dropdown-menu {
+  --bs-dropdown-bg: var(--t-surface);
+  --bs-dropdown-border-color: var(--bs-border-color);
+  --bs-dropdown-border-radius: 10px;
+  --bs-dropdown-padding-x: 4px;
+  --bs-dropdown-padding-y: 4px;
+  --bs-dropdown-item-padding-x: 10px;
+  --bs-dropdown-item-padding-y: 7px;
+  --bs-dropdown-item-border-radius: 6px;
+  --bs-dropdown-font-size: 13.5px;
+  --bs-dropdown-link-color: var(--bs-body-color);
+  --bs-dropdown-link-hover-bg: var(--t-hover);
+  --bs-dropdown-link-active-bg: var(--t-hover);
+  --bs-dropdown-link-active-color: var(--bs-body-color);
+  --bs-dropdown-min-width: 170px;
+  --bs-dropdown-divider-bg: var(--bs-border-color);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+  font-weight: 500;
+}
+.dropdown-item { border-radius: 6px; font-weight: 500; }
+.dropdown-divider { margin: 4px 6px; }
+
+.breadcrumb {
+  --bs-breadcrumb-font-size: 13.5px;
+  --bs-breadcrumb-item-active-color: var(--bs-secondary-color);
+  --bs-breadcrumb-divider-color: var(--t-line-strong);
+  --bs-breadcrumb-item-padding-x: 6px;
+}
+
+.alert-danger {
+  --bs-alert-bg: var(--bs-danger);
+  --bs-alert-color: #fff;
+  --bs-alert-border-color: var(--bs-danger);
+  --bs-alert-padding-x: 12px;
+  --bs-alert-padding-y: 9px;
+  --bs-alert-border-radius: 8px;
+  --bs-alert-margin-bottom: 0;
+  font-weight: 600; font-size: 13.5px;
+}
+
+/* Things Bootstrap has no equivalent for ---------------------------------- */
+
+.brand { font-size: 18px; line-height: normal; font-weight: 700; letter-spacing: -0.04em; color: var(--bs-body-color); }
+.brand::after { content: "."; color: var(--bs-primary); }
+.brand:hover { text-decoration: none; color: var(--bs-body-color); }
+.brand.big { font-size: 40px; }
+
+/* The current sidebar item's bar on its left edge. */
+.nav-pills .nav-link.active::before {
+  content: ""; position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px;
+  border-radius: 3px; background: var(--bs-primary);
+}
+
+/* Sidebar: a fixed-width, full-height column, its footer pinned to the bottom.
+   On phones it's a top bar whose menu button opens the rest below it. */
+.sidebar { padding: 16px 12px 12px; overflow-y: auto; }
+.sidebar-top { padding: 0 6px 12px; }
+.sidebar-body { gap: 10px; }
+.sidebar-body.collapsing { transition: none; }
+.menu-toggle { --bs-btn-padding-x: 6px; --bs-btn-padding-y: 6px; --bs-btn-border-width: 0; line-height: 1; }
+@media (min-width: 768px) {
+  .sidebar { width: 248px; flex: none; position: sticky; top: 0; height: 100vh; border-right: 1px solid var(--bs-border-color); }
+  .sidebar-body { flex: 1; }
+}
+@media (max-width: 767.98px) {
+  .sidebar { position: sticky; top: 0; z-index: 10; max-height: 100vh; padding: 10px 12px; border-bottom: 1px solid var(--bs-border-color); }
+  .sidebar-top { padding: 0 4px; }
+  .sidebar-body { padding-top: 10px; }
+  .sidebar-body.show { display: flex; }
+}
+.sidebar-nav { gap: 1px; margin-top: 6px; }
+/* Center the label itself, the "+" hanging to its left: extra right padding
+   equal to the icon plus its gap balances the icon. */
+.new-traq-button { padding-right: 34px; }
+.sidebar-foot { padding-top: 12px; }
+.sidebar-extras { margin-top: 12px; padding-top: 14px; }
+.bookmarklet { --bs-btn-border-width: 0; cursor: grab; }
+.sidebar-count { font: 500 11.5px var(--bs-font-monospace); color: var(--bs-secondary-color); }
+/* Project rows: Rename/Delete icons take the count's place on hover. */
+.project-actions { gap: 2px; opacity: 0; transition: opacity .12s; }
+.tiny-btn { --bs-btn-padding-x: 4px; --bs-btn-padding-y: 4px; --bs-btn-border-width: 0; --bs-btn-border-radius: 5px;
+  --bs-btn-color: var(--bs-secondary-color); line-height: 1; }
+.tiny-btn.danger-hover:hover { --bs-btn-hover-color: var(--bs-danger); }
+/* The theme button shows the mode it switches to. */
+[data-bs-theme="dark"] .show-in-light, [data-bs-theme="light"] .show-in-dark { display: none !important; }
+.project-row:hover .project-actions, .project-row:focus-within .project-actions { opacity: 1; }
+.project-row:has(.project-actions):hover .sidebar-count,
+.project-row:has(.project-actions):focus-within .sidebar-count { visibility: hidden; }
+@media (hover: none) { .project-actions { opacity: 1; } }
+
+.min-w-0 { min-width: 0; }
+/* Sign-in and error pages: one centered column. */
+.solo-card { max-width: 380px; gap: 14px; justify-items: center; }
+.solo-card p { margin: 0; }
+.lede { color: var(--t-ink-2); font-size: 15px; }
+.page-title { font-size: 22px; font-weight: 650; letter-spacing: -0.02em; margin-bottom: 18px; }
+.content { max-width: 900px; padding: 36px 48px 80px; }
+/* A page's top bar: its left side lines up with the content, its actions sit near the window's edge. */
+.page-bar { padding: 14px 14px 0 48px; min-height: 48px; }
+/* The bar already spaces the content from the top; just set it apart from the bar. */
+.page-bar + .content { padding-top: 18px; }
+@media (max-width: 767.98px) {
+  .content { padding: 24px 16px 64px; }
+  .project-picker { flex-basis: 100%; }
+  .page-bar { padding: 10px 6px 0 16px; }
+  .page-bar + .content { padding-top: 12px; }
+}
+.pre-wrap { white-space: pre-wrap; overflow-wrap: anywhere; }
+.clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.traq-row { padding: 11px 4px; }
+.quiet-pill { font-size: 12px; font-weight: 500; color: var(--t-ink-2); background: var(--t-pill); }
+.project-pill { flex: none; max-width: 30%; }
+.mono-meta { font: 12px var(--bs-font-monospace); color: var(--bs-secondary-color); }
+
+/* Traq page */
+.traq { max-width: 720px; }
+.traq-title { font-size: 30px; font-weight: 650; line-height: 1.25; letter-spacing: -0.025em; overflow-wrap: anywhere; }
+.traq-title.is-done { color: var(--bs-secondary-color); }
+.traq-text { font-size: 15.5px; line-height: 1.6; }
+.link-card { margin-bottom: 10px; }
+.link-card + .traq-text { margin-top: 18px; }
+.traq-text + .link-card { margin-top: 16px; }
+.link-card .card-body { gap: 12px; }
+.link-card .source-badge { margin-top: 1px; }
+.link-body { gap: 6px; }
+.link-title { font-weight: 550; color: var(--bs-body-color); }
+.link-title:hover { color: var(--bs-primary); text-decoration: none; }
+.link-status-row { gap: 6px 8px; font-size: 12px; }
+.link-status { gap: 6px; line-height: normal; }
+/* Just the icon: no box on hover, when open, or after a click. */
+.icon-btn {
+  --bs-btn-padding-x: 6px; --bs-btn-padding-y: 6px; --bs-btn-border-width: 0; line-height: 1;
+  --bs-btn-color: var(--bs-secondary-color); --bs-btn-hover-color: var(--bs-body-color); --bs-btn-active-color: var(--bs-body-color);
+  --bs-btn-hover-bg: transparent; --bs-btn-active-bg: transparent;
+}
+.traq-edit .dialog-bar { margin-top: 12px; }
+.source-badge {
+  width: 24px; height: 24px; flex: none; display: inline-grid; place-items: center; padding: 0;
+  border-radius: 7px; font: 700 10px/1 var(--bs-body-font-family); letter-spacing: -0.02em;
+  color: #fff; background: #8b8f97;
+}
+.source-github { background: #24292f; }
+.source-jira { background: #1868db; }
+.source-confluence { background: #1c5bbf; }
+.source-slack { background: #611f69; }
+.source-google { background: #1e8e3e; }
+.source-figma { background: #e2552d; }
+.source-notion { background: #37352f; }
+.source-linear { background: #5e6ad2; }
+.source-zendesk { background: #03363d; }
+.source-intercom { background: #1f8ded; }
+.source-salesforce { background: #0b72c4; }
+.source-gong { background: #8039df; }
+.source-web { background: var(--t-line-strong); color: var(--t-ink-2); font-size: 12px; }
+[data-bs-theme="dark"] :is(.source-github, .source-notion) { background: #3a3f46; }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.text-warn { color: var(--t-warn); }
+.chip {
+  font-size: 12px; line-height: normal; font-weight: 500; border-radius: 6px; padding: 1px 7px; border: 1px solid;
+  color: var(--bs-body-color); background: var(--t-changed-soft); border-color: var(--t-changed-line);
+}
+.chip.quiet { color: var(--bs-secondary-color); background: var(--t-hover); border-color: var(--bs-border-color); }
+
+/* The sticky-style text box's drag grip. */
+.resize-grip {
+  position: absolute; right: 2px; bottom: 2px; width: 11px; height: 11px;
+  display: grid; place-items: center; color: var(--bs-secondary-color);
+  cursor: ns-resize; touch-action: none; border-radius: 4px;
+}
+.resize-grip:hover { color: var(--bs-body-color); background: var(--t-hover); }
+[data-traq-box] textarea { resize: none; min-height: 98px; max-height: 70vh; padding: 10px 12px 12px; font-size: 15px; line-height: 1.5; }
+
+/* Bookmarklet save window */
+body.popup { background: var(--t-surface); }
+.popup-head { padding: 14px 18px; }
+/* minmax(0, 1fr) and min-width: 0 let a long title shrink to "…" instead of
+   widening the window's contents. */
+.capture { padding: 16px 18px 18px; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+.capture-title { line-height: 1.35; overflow-wrap: anywhere; }
+.traq-picker { min-width: 0; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+.picker-heading { float: none; margin-bottom: 8px; font-size: 12.5px; font-weight: 600; line-height: inherit; color: var(--t-ink-2); }
+.picker-section { margin-top: 10px; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+.picker-section .picker-heading { margin-bottom: 0; }
+.picker-list { border: 1px solid var(--t-line-strong); border-radius: 10px; overflow: hidden; }
+.picker-list:empty { display: none; }
+.picker-option { gap: 10px; padding: 9px 12px; font-size: 13.5px; cursor: pointer; }
+.picker-option.new { row-gap: 10px; cursor: default; }
+.picker-option.new label { gap: 10px; cursor: pointer; }
+.picker-option input[type=radio] { margin: 0; accent-color: var(--bs-primary); }
+.picker-option:hover { background: var(--t-hover); }
+.picker-option:has(input:checked) { background: var(--t-accent-soft); }
+.picker-meta { max-width: 40%; padding-left: 8px; }
+/* Already has the page: shown with a check instead of a radio, not pickable. */
+.picker-option.has-page { cursor: default; }
+.picker-option.has-page:hover { background: none; }
+.capture-note { gap: 4px; font-size: 12.5px; font-weight: 500; color: var(--t-ink-2); }
+.dup-where { background: rgba(255, 255, 255, 0.22); font-size: 12px; }

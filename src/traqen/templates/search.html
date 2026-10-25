@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% from "macros.html" import traq_rows %}
+{% block title %}Search · Traqen{% endblock %}
+{% block content %}
+{% if q %}
+<h1 class="page-title">“{{ q }}”</h1>
+{% if results %}
+{{ traq_rows(results, user) }}
+{% else %}
+<p class="text-body-secondary">Nothing matches.</p>
+{% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% from "macros.html" import csrf, traq_box, project_picker, icon with context %}
+{% block title %}{{ traq.title }} · Traqen{% endblock %}
+
+{% block topbar %}
+{# Breadcrumb lined up with the content; the ⋯ menu near the window's edge. #}
+<div class="page-bar d-flex align-items-center justify-content-between gap-3">
+  <nav aria-label="Breadcrumb" class="min-w-0">
+    <ol class="breadcrumb mb-0 flex-nowrap">
+      <li class="breadcrumb-item">
+        {%- if traq.status == "done" %}<a data-crumb href="/archive" class="link-body-emphasis">Archive</a>
+        {%- elif project %}<a data-crumb href="/projects/{{ project.id }}" class="link-body-emphasis">{{ project.name }}</a>
+        {%- else %}<a data-crumb href="/" class="link-body-emphasis">Everything</a>{% endif -%}
+      </li>
+      <li class="breadcrumb-item active text-truncate" aria-current="page">{{ traq.title }}</li>
+    </ol>
+  </nav>
+  <div class="dropdown">
+    <button class="btn icon-btn" type="button" data-bs-toggle="dropdown" data-bs-offset="0,4" aria-expanded="false" aria-label="More actions" title="More">
+      {{ icon("dots", 16) }}
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end">
+      <li>
+        <button class="dropdown-item d-flex align-items-center gap-2" type="button" data-start-edit>
+          {{ icon("pencil", 14) }} Edit
+        </button>
+      </li>
+      <li>
+        <form method="post" action="/traqs/{{ traq.id }}/done">
+          {{ csrf() }}
+          <button class="dropdown-item d-flex align-items-center gap-2" type="submit">
+            {% if traq.status == "done" %}{{ icon("reopen", 14) }} Reopen{% else %}{{ icon("check", 14) }} Mark done{% endif %}
+          </button>
+        </form>
+      </li>
+      <li><hr class="dropdown-divider"></li>
+      <li>
+        <button class="dropdown-item text-danger d-flex align-items-center gap-2" type="button" data-bs-toggle="modal" data-bs-target="#delete-traq">
+          {{ icon("trash", 14) }} Delete traq
+        </button>
+      </li>
+    </ul>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<article class="traq">
+  {# The content; if links are due a check, it's re-rendered in place once the
+     check (run after the page loads) finishes. #}
+  <div data-view {% if check_links %}data-live-url="/traqs/{{ traq.id }}/live"{% endif %}>
+    {% include "_traq_view.html" %}
+  </div>
+
+  <form class="traq-edit" method="post" action="/traqs/{{ traq.id }}/edit" data-edit hidden>
+    {{ csrf() }}
+    {{ traq_box(traq.text, "Write a note") }}
+    <div class="dialog-bar d-flex flex-wrap align-items-center gap-2">
+      {{ project_picker(projects, traq.project_id) }}
+      <button class="btn btn-link" type="button" data-toggle-edit>Cancel</button>
+      <button class="btn btn-primary" type="submit">Save</button>
+    </div>
+  </form>
+</article>
+
+<div class="modal" id="delete-traq" tabindex="-1" aria-labelledby="delete-traq-title">
+  <div class="modal-dialog modal-dialog-centered" style="--bs-modal-width: 420px">
+    <form class="modal-content dialog-form small" method="post" action="/traqs/{{ traq.id }}/delete">
+      {{ csrf() }}
+      <h2 class="dialog-title" id="delete-traq-title">Delete this traq?</h2>
+      <p class="text-body-secondary small mb-0">“{{ traq.title }}” and its links will be gone for good.</p>
+      <div class="dialog-bar d-flex justify-content-end gap-2">
+        <button class="btn btn-link" type="button" data-bs-dismiss="modal" data-autofocus>Cancel</button>
+        <button class="btn btn-danger" type="submit">Delete</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

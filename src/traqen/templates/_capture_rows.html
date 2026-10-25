@@ -1,0 +1,17 @@
+{# Traqs offered in the save window: as recent traqs, and as search results. #}
+{% from "macros.html" import has_page_icon with context %}
+{% for t in rows %}
+{% if t.has_page %}
+<div class="list-group-item picker-option has-page d-flex align-items-center" title="Already has this page" data-traq="{{ t.id }}" data-has-page>
+  {{ has_page_icon() }}
+  <span class="picker-label text-truncate flex-grow-1 min-w-0 text-body-secondary">{{ t.title }}</span>
+  {% if t.project %}<span class="picker-meta mono-meta text-truncate">{{ t.project }}</span>{% endif %}
+</div>
+{% else %}
+<label class="list-group-item picker-option d-flex align-items-center" data-traq="{{ t.id }}">
+  <input type="radio" name="traq" value="{{ t.id }}">
+  <span class="picker-label text-truncate flex-grow-1 min-w-0">{{ t.title }}</span>
+  {% if t.project %}<span class="picker-meta mono-meta text-truncate">{{ t.project }}</span>{% endif %}
+</label>
+{% endif %}
+{% endfor %}
