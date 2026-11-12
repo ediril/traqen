@@ -49,11 +49,13 @@
 </div>
 {% endmacro %}
 
-{# `show_project`: in a list spanning projects, each traq's project as a pill. #}
-{% macro traq_rows(traqs, user, show_project=False) %}
+{# `changed`: ids of traqs with something new (a dot before the title).
+   `show_project`: in a list spanning projects, each traq's project as a pill. #}
+{% macro traq_rows(traqs, user, changed=(), show_project=False) %}
 <div class="list-group list-group-flush border-top border-bottom">
   {% for traq in traqs %}
-  <a data-traq-row href="/traqs/{{ traq.id }}" class="list-group-item list-group-item-action traq-row d-flex align-items-baseline gap-3">
+  <a data-traq-row href="/traqs/{{ traq.id }}" class="list-group-item list-group-item-action traq-row d-flex align-items-baseline gap-2">
+    <span class="news-dot{% if traq.id in changed %} on{% endif %}"{% if traq.id in changed %} title="Something changed" role="img" aria-label="Something changed" data-news{% endif %}></span>
     <span class="d-flex align-items-baseline gap-2 flex-grow-1 min-w-0">
       <span class="text-truncate min-w-0">{{ traq.title }}</span>
       {% if show_project and traq.project_name %}<span class="badge rounded-pill quiet-pill project-pill text-truncate" data-project-pill>{{ traq.project_name }}</span>{% endif %}

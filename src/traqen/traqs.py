@@ -11,6 +11,7 @@ import sqlite3
 
 from . import db as dbm
 from .live.links import normalize_url, page_key
+from .live.state import describe_changes
 
 TITLE_LENGTH = 80
 
@@ -168,6 +169,25 @@ def update_title(db: sqlite3.Connection, traq_id: int) -> None:
     else:
         title = first_line(line) or "Untitled"
     db.execute("UPDATE traqs SET title = ? WHERE id = ?", (title, traq_id))
+
+
+def link_changes(link) -> list[str]:
+    """What changed on a link since you last acknowledged it ("Got it")."""
+    return describe_changes(
+        dbm.load_json(link["seen_state"]), dbm.load_json(link["state"])
+    )
+
+
+def with_changes(db: sqlite3.Connection, traqs) -> set[int]:
+    """Which of these traqs have a link with a change you haven't acknowledged
+    (the same rule that lights up its card)."""
+    ids = [traq["id"] for traq in traqs]
+    links = db.execute(
+        f"SELECT traq_id, state, seen_state FROM links "
+        f"WHERE traq_id IN ({', '.join('?' * len(ids))})",
+        ids,
+    )
+    return {link["traq_id"] for link in links if link_changes(link)}
 
 
 def blocks(text: str, links: dict[str, dict]) -> list[dict]:

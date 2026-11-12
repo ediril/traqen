@@ -677,3 +677,26 @@ def test_opening_a_traq_never_waits_on_link_checks(session, db):
 def test_live_check_is_only_for_your_own_traqs(session, sign_in_as):
     traq_id = session.create_traq("https://acme.slack.com/archives/C1/p1")
     assert sign_in_as("ben").get(f"/traqs/{traq_id}/live").status_code == 404
+
+
+def test_lists_show_which_traqs_have_something_new(session, db, public_dns):
+    session.mock_http.get(f"https://{PAGE_IP}/x").respond(html=page("A", "one"))
+    changing = session.create_traq("https://status.example.com/x", new_project="Acme")
+    quiet = session.create_traq("Notes", new_project="Acme")
+    acme = db.execute("SELECT id FROM projects").fetchone()[0]
+
+    def lit(path):
+        return [
+            int(row["href"].rsplit("/", 1)[1])
+            for row in session.page(path).select("[data-traq-row]")
+            if row.select_one("[data-news]")
+        ]
+
+    assert lit(f"/projects/{acme}") == []
+    session.mock_http.routes.clear()
+    session.mock_http.get(f"https://{PAGE_IP}/x").respond(html=page("A", "two"))
+    session.recheck(changing)
+    assert lit(f"/projects/{acme}") == lit("/") == [changing]
+    assert quiet not in lit("/")
+    got_it(session, changing)
+    assert lit(f"/projects/{acme}") == []

@@ -13,8 +13,8 @@ from .auth import CSRF, current_user, get_db, safe_next
 from .live import engine
 from .live.links import classify
 from .shell import render
-from .templating import link_changes, templates
-from .traqs import blocks, find_traqs, tidy_new_text
+from .templating import templates
+from .traqs import blocks, find_traqs, link_changes, tidy_new_text, with_changes
 
 router = APIRouter()
 
@@ -121,6 +121,7 @@ def traq_list(request, db, user, project=None):
         user,
         "home.html",
         traqs=traqs,
+        changed=with_changes(db, traqs),
         project=project,
         current_project=project["id"] if project else None,
         section=None if project else "all",
@@ -190,7 +191,15 @@ def archive(request: Request, user=Depends(current_user), db=Depends(get_db)):
         "ORDER BY created_at DESC, id DESC",
         (user["id"],),
     ).fetchall()
-    return render(request, db, user, "archive.html", traqs=traqs, section="archive")
+    return render(
+        request,
+        db,
+        user,
+        "archive.html",
+        traqs=traqs,
+        changed=with_changes(db, traqs),
+        section="archive",
+    )
 
 
 @router.get("/search")
@@ -199,7 +208,15 @@ def search(
 ):
     query = q.strip()
     results = find_traqs(db, user["id"], query)
-    return render(request, db, user, "search.html", q=query, results=results)
+    return render(
+        request,
+        db,
+        user,
+        "search.html",
+        q=query,
+        results=results,
+        changed=with_changes(db, results),
+    )
 
 
 # A traq ----------------------------------------------------------------------

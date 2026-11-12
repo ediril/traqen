@@ -5,7 +5,7 @@
 {% if q %}
 <h1 class="page-title">“{{ q }}”</h1>
 {% if results %}
-{{ traq_rows(results, user) }}
+{{ traq_rows(results, user, changed) }}
 {% else %}
 <p class="text-body-secondary">Nothing matches.</p>
 {% endif %}

@@ -1,6 +1,5 @@
 - [ ] Reminders attached to a traq ("follow up on Acme SSO Friday"), with due ones shown on the home view. For keeping work from going stale, not a to-do app.
 - [ ] Decide whether open questions and decisions should stand out from plain text (e.g. found and listed on their own), or stay as ordinary lines in the traq.
-- [ ] Show what changed on the lists, not only on link cards: mark traqs with changes since you last looked in Everything and project lists, so you can see a PR merged overnight without opening each traq.
 - [ ] Turn on Google sign-in. It is off for now (`TRAQEN_SIGN_IN=none`: everyone is one local user, localhost only).
   - Register a Google OAuth client (redirect URI `{TRAQEN_BASE_URL}/auth/google/callback`), set `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`, and switch to `TRAQEN_SIGN_IN=google`.
   - Decide what happens to traqs created by the local user (e.g. hand them to the first Google account that signs in).

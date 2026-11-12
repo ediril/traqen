@@ -11,7 +11,6 @@ from markupsafe import Markup, escape
 
 from . import db as dbm
 from .live.links import LABELS
-from .live.state import describe_changes
 from .version import current_version
 
 templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
@@ -95,12 +94,6 @@ def linkify(text: str) -> Markup:
         end = match.end()
     pieces.append(escape(text[end:]))
     return Markup("").join(pieces)
-
-
-def link_changes(link) -> list[str]:
-    return describe_changes(
-        dbm.load_json(link["seen_state"]), dbm.load_json(link["state"])
-    )
 
 
 templates.env.globals.update(
