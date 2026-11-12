@@ -269,9 +269,13 @@ a:hover { text-decoration: underline; text-underline-offset: 2px; }
 .breadcrumb {
   --bs-breadcrumb-font-size: 13.5px;
   --bs-breadcrumb-item-active-color: var(--bs-secondary-color);
-  --bs-breadcrumb-divider-color: var(--t-line-strong);
-  --bs-breadcrumb-item-padding-x: 6px;
+  --bs-breadcrumb-divider: "›";
+  --bs-breadcrumb-divider-color: var(--bs-secondary-color);
+  --bs-breadcrumb-item-padding-x: 8px;
 }
+/* Where the traq lives, as a link back to it. */
+.breadcrumb a { font-weight: 500; }
+.breadcrumb a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 .alert-danger {
   --bs-alert-bg: var(--bs-danger);
