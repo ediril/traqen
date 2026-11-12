@@ -1,3 +1,9 @@
+## 2026-11-12
+
+- Opening a traq checks its links (unless they were checked in the last minute), instead of showing when each was last checked or offering "refresh now".
+- A link card lights up when something changed and stays lit until you click "Got it"; a card with nothing new is dimmed.
+- Text a visitor can't see (hidden elements) no longer counts as a page's content, so it can't flag a change or show in the preview.
+
 ## 2026-10-25
 
 - Adopt PolyForm Strict License 1.0.0, with license terms, package metadata, and commercial licensing contact details.

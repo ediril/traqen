@@ -1,5 +1,6 @@
 """Traqs: the list, creating one, its page, editing, archive, and search."""
 
+import hashlib
 import sqlite3
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -230,15 +231,18 @@ async def create_traq(
 
 def traq_view(db: sqlite3.Connection, user, traq_id: int) -> dict:
     """What the traq's content shows: its title and text, with a card for each
-    link line. Links count as seen once shown, so a change is flagged once."""
+    link line, each with what changed since you last acknowledged it. Only
+    you clear a change (see `acknowledge`); looking doesn't."""
     traq = get_traq(db, user, traq_id)
+    rows = db.execute("SELECT * FROM links WHERE traq_id = ?", (traq_id,)).fetchall()
     links = {
         link["url"]: {
             "link": link,
             "source": classify(link["url"]).source,
             "changes": link_changes(link),
+            "shown": shown_state(link["state"]),
         }
-        for link in db.execute("SELECT * FROM links WHERE traq_id = ?", (traq_id,))
+        for link in rows
     }
     view = {
         "traq": traq,
@@ -252,11 +256,13 @@ def traq_view(db: sqlite3.Connection, user, traq_id: int) -> dict:
             )
         },
     }
-    db.execute(
-        "UPDATE links SET seen_state = state WHERE traq_id = ? AND state IS NOT NULL",
-        (traq_id,),
-    )
     return view
+
+
+def shown_state(state: str | None) -> str:
+    """Identifies the state a card showed, so acknowledging it never clears a
+    change that arrived after the page was shown."""
+    return hashlib.sha256((state or "").encode()).hexdigest()[:16]
 
 
 @router.get("/traqs/{traq_id}")
@@ -301,6 +307,26 @@ async def traq_live(
         "_traq_view.html",
         {"user": user, **traq_view(db, user, traq_id)},
     )
+
+
+@router.post("/traqs/{traq_id}/links/{link_id}/acknowledge", dependencies=CSRF)
+def acknowledge(
+    traq_id: int,
+    link_id: int,
+    shown: str = Form(...),
+    user=Depends(current_user),
+    db=Depends(get_db),
+):
+    """You've seen what changed on this card: it dims until something else does."""
+    get_traq(db, user, traq_id)
+    link = db.execute(
+        "SELECT state FROM links WHERE id = ? AND traq_id = ?", (link_id, traq_id)
+    ).fetchone()
+    if link is None:
+        raise HTTPException(404, "Link not found")
+    if shown_state(link["state"]) == shown:
+        db.execute("UPDATE links SET seen_state = state WHERE id = ?", (link_id,))
+    return back(f"/traqs/{traq_id}")
 
 
 @router.post("/traqs/{traq_id}/edit", dependencies=CSRF)

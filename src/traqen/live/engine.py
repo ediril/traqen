@@ -24,7 +24,8 @@ from .state import (
 log = logging.getLogger("traqen.live")
 
 CONCURRENCY = 6
-ON_OPEN_MAX_AGE = timedelta(minutes=5)
+# Opening a traq checks its links, unless they were checked moments ago.
+ON_OPEN_MAX_AGE = timedelta(minutes=1)
 # A whole check, every request in it included. The client's timeout only
 # bounds each read, so a page that trickles bytes could otherwise hold a
 # check (and the refresh waiting on it) open for as long as it likes.

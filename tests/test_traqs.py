@@ -364,19 +364,21 @@ def test_each_link_shows_its_status_and_whether_it_changed(session, db):
         )
 
     def shown(card):
-        if card.select("[data-change]"):
-            change = "chips"
-        else:
-            change = "no change" if "No change" in card.text else None
-        return card.select_one("[data-status]")["data-status"], change
+        lit = "changed" in card["class"]
+        assert (
+            lit
+            == bool(card.select("[data-change]"))
+            == bool(card.select("[data-acknowledge]"))
+        )
+        return card.select_one("[data-status]")["data-status"], lit
 
     cards = session.page(f"/traqs/{traq_id}").select("[data-link-card]")
     assert [shown(card) for card in cards] == [
-        ("live", "no change"),
-        ("live", "chips"),
-        ("dead", None),
-        ("failed", "no change"),
-        ("pending", None),
+        ("live", False),
+        ("live", True),
+        ("dead", False),
+        ("failed", False),
+        ("pending", False),
     ]
 
 

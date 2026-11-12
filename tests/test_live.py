@@ -1,6 +1,7 @@
 import asyncio
 import json
 from dataclasses import replace
+from datetime import timedelta
 from urllib.parse import parse_qs, urlsplit
 
 import httpx
@@ -13,7 +14,7 @@ from traqen.app import create_app, refresh_due
 from traqen.crypto import TokenCipher
 from traqen.live import engine, jira, net
 
-from .conftest import Session
+from .conftest import Session, html
 
 PR_URL = "https://github.com/acme/api/pull/42"
 GH = "api.github.com"
@@ -88,7 +89,9 @@ def test_github_pull_request_is_live_and_changes_are_surfaced(session, db):
     page = session.recheck(traq_id)
     assert "Review: Review requested → Approved" in page
     assert "2 new comments" in page
-    # Looking at the traq marks the change as seen.
+    # Looking again doesn't clear it; "Got it" does.
+    assert "Review requested → Approved" in session.get(f"/traqs/{traq_id}").text
+    got_it(session, traq_id)
     assert "Review requested → Approved" not in session.get(f"/traqs/{traq_id}").text
 
 
@@ -325,7 +328,79 @@ def test_public_page_is_fetched_by_address_with_original_host(session, public_dn
     session.mock_http.get(f"https://{PAGE_IP}/incidents/1").respond(
         html=page("Incident 1", "Resolved")
     )
-    assert "Updated" in session.recheck(traq_id)
+    card = html(session.recheck(traq_id))
+    assert [chip.text for chip in card.select("[data-change]")] == ["Updated"]
+
+
+def test_text_a_visitor_cant_see_is_not_the_page(session, public_dns, db):
+    def body(error):
+        hidden = (
+            f"<div hidden><span>{error}</span></div>"
+            f'<p style="display: none">{error}</p>'
+        )
+        return page("Kagi", f"Search without ads{hidden}")
+
+    session.mock_http.get(f"https://{PAGE_IP}/").respond(
+        html=body("Verification failed")
+    )
+    traq_id = session.create_traq("https://kagi.example.com/")
+    assert dbm.load_json(the_link(db)["state"])["preview"] == "Search without ads"
+    # Hidden text changing isn't the page changing.
+    session.mock_http.routes.clear()
+    session.mock_http.get(f"https://{PAGE_IP}/").respond(html=body("Try again later"))
+    assert html(session.recheck(traq_id)).select("[data-change]") == []
+
+
+def got_it(session, traq_id, page=None):
+    """Click "Got it" on the (first) lit card, as shown on `page`."""
+    page = page or session.page(f"/traqs/{traq_id}")
+    form = page.select_one("[data-acknowledge]")
+    return session.post(form["action"], shown=form.select_one("[name=shown]")["value"])
+
+
+def test_a_change_stays_lit_until_you_clear_it(session, db, public_dns):
+    session.mock_http.get(f"https://{PAGE_IP}/x").respond(html=page("A", "one"))
+    traq_id = session.create_traq("https://status.example.com/x")
+
+    def card():
+        return session.page(f"/traqs/{traq_id}").select_one("[data-link-card]")
+
+    assert "settled" in card()["class"]  # nothing new on first sight
+    session.mock_http.routes.clear()
+    session.mock_http.get(f"https://{PAGE_IP}/x").respond(html=page("A", "two"))
+    session.recheck(traq_id)
+    # Lit up, on every visit, until you say you've seen it.
+    for _ in range(2):
+        assert "changed" in card()["class"]
+        assert [c.text for c in card().select("[data-change]")] == ["Updated"]
+    assert got_it(session, traq_id).headers["location"] == f"/traqs/{traq_id}"
+    assert "settled" in card()["class"] and not card().select("[data-change]")
+
+
+def test_got_it_never_clears_a_change_you_havent_seen(session, db, public_dns):
+    session.mock_http.get(f"https://{PAGE_IP}/x").respond(html=page("A", "one"))
+    traq_id = session.create_traq("https://status.example.com/x")
+    session.mock_http.routes.clear()
+    session.mock_http.get(f"https://{PAGE_IP}/x").respond(html=page("A", "two"))
+    session.recheck(traq_id)
+    shown = session.page(f"/traqs/{traq_id}")
+    # The page changes again after you opened it, then you click "Got it".
+    session.mock_http.routes.clear()
+    session.mock_http.get(f"https://{PAGE_IP}/x").respond(html=page("A", "three"))
+    session.recheck(traq_id)
+    got_it(session, traq_id, shown)
+    card = session.page(f"/traqs/{traq_id}").select_one("[data-link-card]")
+    assert "changed" in card["class"]
+
+
+def test_opening_a_traq_checks_links_not_checked_in_the_last_minute(
+    session, db, public_dns
+):
+    session.mock_http.get(f"https://{PAGE_IP}/x").respond(html=page("A", "one"))
+    traq_id = session.create_traq("https://status.example.com/x")
+    assert not session.page(f"/traqs/{traq_id}").select_one("[data-live-url]")
+    db.execute("UPDATE links SET checked_at = ?", (dbm.ago(timedelta(minutes=2)),))
+    assert session.page(f"/traqs/{traq_id}").select_one("[data-live-url]")
 
 
 def test_sign_in_pages_are_not_tracked(session, public_dns, db):

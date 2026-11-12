@@ -1,6 +1,7 @@
 """Live state for public web pages: title plus a fingerprint of the main content."""
 
 import hashlib
+import re
 from urllib.parse import urlsplit
 
 import httpx
@@ -23,6 +24,7 @@ _CHROME = [
     "aside",
     "form",
 ]
+_HIDDEN_STYLE = re.compile(r"display\s*:\s*none|visibility\s*:\s*hidden", re.I)
 _SIGN_IN_WORDS = ("login", "signin", "sign-in", "sign_in", "sso", "auth")
 
 
@@ -54,6 +56,12 @@ async def check(client: httpx.AsyncClient, url: str) -> Snapshot:
     title = _title(soup) or urlsplit(page.url).hostname
     for tag in soup(_CHROME):
         tag.decompose()
+    # Text a visitor doesn't see (a hidden error message, say) isn't content.
+    for tag in soup.select('[hidden], [aria-hidden="true"]'):
+        tag.decompose()
+    for tag in soup.select("[style]"):
+        if _HIDDEN_STYLE.search(tag.get("style", "")):
+            tag.decompose()
     root = soup.find("main") or soup.find("article") or soup.body or soup
     text = " ".join(root.get_text(" ").split())
     return live(

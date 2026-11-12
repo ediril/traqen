@@ -147,6 +147,22 @@ document.querySelectorAll("[data-live-url]").forEach(async (view) => {
     // Offline or server down: keep showing the last known state.
   }
 });
+// "Got it" on a card clears what changed, in place (delegated: the content is
+// re-rendered by the live check above).
+document.addEventListener("submit", async (event) => {
+  const form = event.target.closest("[data-acknowledge]");
+  if (!form) return;
+  event.preventDefault();
+  const view = form.closest("[data-view]");
+  try {
+    const response = await fetch(form.action, { method: "POST", body: new FormData(form) });
+    if (!response.ok) throw new Error(response.statusText);
+    const page = new DOMParser().parseFromString(await response.text(), "text/html");
+    view.innerHTML = page.querySelector("[data-view]").innerHTML;
+  } catch {
+    form.submit(); // fall back to a plain post and page load
+  }
+});
 document.querySelectorAll("[data-toggle-edit]").forEach((button) => {
   button.addEventListener("click", () => setEditing(false));
 });

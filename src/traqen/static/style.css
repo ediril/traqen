@@ -211,6 +211,15 @@ a:hover { text-decoration: underline; text-underline-offset: 2px; }
   --bs-card-spacer-y: 12px;
 }
 .card.changed { --bs-card-bg: var(--t-changed-soft); --bs-card-border-color: var(--t-changed-line); }
+/* Nothing new on it: it steps back, until you look at it. */
+.card.settled { opacity: .6; transition: opacity .15s; }
+.card.settled:hover, .card.settled:focus-within { opacity: 1; }
+.acknowledge-btn {
+  flex: none; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+  --bs-btn-color: var(--bs-body-color); --bs-btn-bg: var(--t-surface);
+  --bs-btn-border-color: var(--t-changed-line);
+  --bs-btn-hover-bg: var(--t-surface); --bs-btn-hover-border-color: var(--bs-body-color);
+}
 
 .modal {
   --bs-modal-bg: var(--bs-body-bg);

@@ -1,4 +1,4 @@
-{% from "macros.html" import source_badge %}
+{% from "macros.html" import csrf, icon, source_badge with context %}
 <div class="mb-3">
   <h1 class="traq-title mb-0{% if traq.status == 'done' %} is-done{% endif %}" data-traq-title>{{ traq.title }}</h1>
   <p class="d-flex flex-wrap align-items-center gap-2 mt-2 mb-0">
@@ -18,7 +18,8 @@
   "unavailable": ("dead", "Not live", "text-danger"),
   "error": ("failed", "Couldn’t check", "text-warn"),
 }.get(link.live, ("pending", "Checking…", "text-body-secondary")) %}
-<div class="card link-card{% if block.changes %} changed{% endif %}" data-link-card>
+{# Lit up while it has something new for you; dimmed once you've seen it. #}
+<div class="card link-card {{ 'changed' if block.changes else 'settled' }}" data-link-card>
   <div class="card-body d-flex align-items-start">
     {{ source_badge(block.source) }}
     <div class="link-body flex-grow-1 min-w-0 d-grid">
@@ -28,8 +29,8 @@
         <span class="mono-meta flex-shrink-0">{{ link.url | domain }}</span>
       </div>
 
-      {# 2. Where it stands: status, then what changed since you last opened
-         this traq (or why it isn't live). #}
+      {# 2. Where it stands: status, then what changed since you last
+         acknowledged it (or why it isn't live). #}
       <div class="link-status-row d-flex flex-wrap align-items-center">
         <span class="link-status d-inline-flex align-items-center fw-medium {{ status[2] }}" data-status="{{ status[0] }}"><span class="status-dot"></span>{{ status[1] }}</span>
         {% if link.live == "unavailable" %}
@@ -39,11 +40,7 @@
           {% elif link.live_fix_url %}<a href="{{ link.live_fix_url }}" target="_blank" rel="noopener">Fix access</a>{% endif %}
         {% else %}
           {% if link.live == "error" %}<span class="text-body-secondary">{{ link.live_reason }}{% if state %}; showing last known state{% endif %}</span>{% endif %}
-          {% if block.changes %}
-            {% for line in block.changes %}<span class="chip" data-change>{{ line }}</span>{% endfor %}
-          {% elif state %}
-            <span class="chip quiet">No change</span>
-          {% endif %}
+          {% for line in block.changes %}<span class="chip" data-change>{{ line }}</span>{% endfor %}
         {% endif %}
       </div>
 
@@ -58,6 +55,13 @@
       {% endif %}
       {% if state.preview %}<p class="text-body-secondary clamp-2 mb-0" style="font-size: 13px">{{ state.preview }}</p>{% endif %}
     </div>
+    {% if block.changes %}
+    <form method="post" action="/traqs/{{ traq.id }}/links/{{ link.id }}/acknowledge" data-acknowledge>
+      {{ csrf() }}
+      <input type="hidden" name="shown" value="{{ block.shown }}">
+      <button class="btn btn-sm acknowledge-btn" type="submit" title="Got it" aria-label="Got it: clear what changed">{{ icon("check", 14) }} Got it</button>
+    </form>
+    {% endif %}
   </div>
 </div>
 {% endif %}
