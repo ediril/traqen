@@ -15,7 +15,7 @@ Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).
 ```bash
 uv venv && uv pip install -e ".[dev]"
 cp .env.example .env    # then fill in the secrets and OAuth clients
-.venv/bin/uvicorn traqen.app:app --reload
+.venv/bin/uvicorn traqen.app:app --reload --port 8000
 ```
 
 Open http://localhost:8000. The database is created on first start.
