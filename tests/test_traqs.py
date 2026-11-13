@@ -4,7 +4,7 @@ from datetime import timedelta
 import pytest
 
 from traqen import db as dbm
-from traqen.templating import linkify
+from traqen import document
 from traqen.traqs import blocks, first_line, split_link
 
 
@@ -23,7 +23,8 @@ def test_note_traq_is_its_text(session, db):
     session.create_traq("Ask Alex about the SSO timeline\nCS says CSV is OK")
     traq = db.execute("SELECT * FROM traqs").fetchone()
     assert traq["title"] == "Ask Alex about the SSO timeline"
-    assert traq["text"] == "Ask Alex about the SSO timeline\nCS says CSV is OK"
+    # Typed as lines, kept as paragraphs.
+    assert traq["text"] == "Ask Alex about the SSO timeline\n\nCS says CSV is OK"
 
 
 def test_link_traq_is_named_after_the_page(session, db):
@@ -42,7 +43,7 @@ def test_link_traq_is_named_after_the_page(session, db):
     # "link + note" typed on one line keeps the link on its own line.
     assert tuple(traq) == (
         "Export times out",
-        "https://github.com/acme/api/issues/9\nnightly export",
+        "https://github.com/acme/api/issues/9\n\nnightly export",
     )
     assert db.execute("SELECT url FROM links").fetchone()[0] == (
         "https://github.com/acme/api/issues/9"
@@ -63,6 +64,7 @@ def test_titles_and_links_are_recognized():
     )
     assert split_link("node.js is slow") == (None, "node.js is slow")
     assert first_line("\n\n  Hello  \nworld") == "Hello"
+    assert first_line("# **Hello** world") == "Hello world"
     long = "Follow up with the platform team about why the nightly export job " * 2
     assert first_line(long).endswith("…") and len(first_line(long)) <= 81
 
@@ -217,7 +219,7 @@ def test_traq_page_splits_title_from_body_and_follows_status(session, db):
         body = page.select_one("[data-traq-text]")
         return (
             page.select_one("[data-traq-title]").text,
-            body.text if body else None,
+            body.text.strip() if body else None,
             page.select_one("[data-crumb]")["href"],
         )
 
@@ -313,37 +315,84 @@ def test_title_follows_the_first_line(session, db):
 def test_page_shows_cards_where_the_links_are():
     a, b = "https://a.example/x", "https://b.example/y"
     cards = {a: {"link": "A"}, b: {"link": "B"}}
-    shown = blocks(f"Title\nintro\n{a}\nmiddle\n\n{b}", cards)
-    assert shown == [
-        {"kind": "text", "text": "intro"},
+
+    def shown(text):
+        return [
+            {"kind": "text", "html": str(block["html"]).strip()}
+            if block["kind"] == "text"
+            else block
+            for block in blocks(text, cards)
+        ]
+
+    assert shown(f"# Title\n\nintro\n\n{a}\n\n*middle*\n\n<{b}>") == [
+        {"kind": "text", "html": "<p>intro</p>"},
         {"kind": "link", "link": "A"},
-        {"kind": "text", "text": "middle"},
+        {"kind": "text", "html": "<p><em>middle</em></p>"},
         {"kind": "link", "link": "B"},
     ]
     # A link as the first line is the title and still gets its card.
-    assert blocks(f"{a}\nnote", cards) == [
+    assert shown(f"{a}\n\nnote") == [
         {"kind": "link", "link": "A"},
-        {"kind": "text", "text": "note"},
+        {"kind": "text", "html": "<p>note</p>"},
     ]
     # A first line too long to be the title in full stays in the text.
     long = "word " * 30
-    assert blocks(long, {}) == [{"kind": "text", "text": long.strip()}]
+    assert shown(long) == [{"kind": "text", "html": f"<p>{long.strip()}</p>"}]
 
 
-def test_links_inside_sentences_are_clickable_and_escaped():
-    html = str(linkify('see https://a.example/x?y=1&z=2, then <b>"bold"</b>.'))
-    assert html == (
-        'see <a href="https://a.example/x?y=1&amp;z=2" target="_blank" '
-        'rel="noopener">https://a.example/x?y=1&amp;z=2</a>, then '
-        "&lt;b&gt;&#34;bold&#34;&lt;/b&gt;."
+def test_only_a_link_on_its_own_in_a_paragraph_is_a_card():
+    text = "\n".join(
+        [
+            "Title",
+            "https://a.example/1",  # 1: a paragraph's line
+            "",
+            "- https://a.example/2",  # in a list
+            "",
+            "> https://a.example/3",  # in a quote
+            "",
+            "```",
+            "https://a.example/4",  # code
+            "```",
+            "",
+            "see https://a.example/5",  # in a sentence
+            "",
+            "[named](https://a.example/6)",  # a named link stays a link
+            "",
+            "<https://a.example/7>",  # 15: an autolink
+            "",
+            "- an item",
+            "  https://a.example/8",  # the item's next line
+        ]
     )
+    assert document.link_lines(text) == {
+        1: "https://a.example/1",
+        15: "https://a.example/7",
+    }
 
 
-def test_links_in_angle_brackets_stop_at_the_bracket():
-    assert str(linkify("see <https://a.example/x> now")) == (
-        'see &lt;<a href="https://a.example/x" target="_blank" '
-        'rel="noopener">https://a.example/x</a>&gt; now'
+def test_text_is_shown_formatted_and_never_runs():
+    html = str(
+        document.render(
+            "see https://a.example/x?y=1&z=2, then <b>bold</b> "
+            "[x](javascript:alert(1)) ![i](javascript:alert(1))\n\n"
+            "| A | B |\n| - | - |\n| ~~1~~ | `2` |"
+        )
     )
+    assert (
+        '<a href="https://a.example/x?y=1&amp;z=2" target="_blank" rel="noopener">'
+        in html
+    )
+    assert "&lt;b&gt;bold&lt;/b&gt;" in html  # raw HTML is shown, not run
+    assert "javascript" not in html.replace("[x](javascript:alert(1))", "").replace(
+        "![i](javascript:alert(1))", ""
+    )
+    assert "<td><s>1</s></td>" in html and "<td><code>2</code></td>" in html
+
+
+def test_title_is_the_first_lines_text():
+    assert document.plain("## **Q4** plan ##") == "Q4 plan"
+    assert document.plain("- [ ] Call `Acme` back") == "Call Acme back"
+    assert document.plain("> [Spec](https://x.example) review") == "Spec review"
 
 
 def test_each_link_shows_its_status_and_whether_it_changed(session, db):

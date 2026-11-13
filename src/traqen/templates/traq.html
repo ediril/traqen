@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "macros.html" import csrf, traq_box, project_picker, icon with context %}
+{% from "macros.html" import csrf, traq_box, project_picker, icon, editor_toolbar with context %}
 {% block title %}{{ traq.title }} · Traqen{% endblock %}
 
 {% block topbar %}
@@ -52,8 +52,13 @@
     {% include "_traq_view.html" %}
   </div>
 
-  <form class="traq-edit" method="post" action="/traqs/{{ traq.id }}/edit" data-edit hidden>
+  {# The editor loads when you first click Edit; until then (or if it can't
+     load) the plain text box is the editor. #}
+  <form class="traq-edit" method="post" action="/traqs/{{ traq.id }}/edit" data-edit hidden
+        data-editor-src="{{ static_url('editor.js') }}" data-upload-url="/traqs/{{ traq.id }}/images">
     {{ csrf() }}
+    {{ editor_toolbar() }}
+    <div class="traq-editor" data-editor-mount hidden></div>
     {{ traq_box(traq.text, "Write a note", doc=True) }}
     <div class="dialog-bar d-flex flex-wrap align-items-center gap-2">
       {{ project_picker(projects, traq.project_id) }}

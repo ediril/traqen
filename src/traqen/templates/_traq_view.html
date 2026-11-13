@@ -7,9 +7,11 @@
     {% if traq.status == "done" %}<span class="badge rounded-pill quiet-pill">Done</span>{% endif %}
   </p>
 </div>
+{# Checklist items tick from here (see tick_task). #}
+<div data-tasks="/traqs/{{ traq.id }}/tasks" data-text-shown="{{ text_shown }}">
 {% for block in blocks %}
 {% if block.kind == "text" %}
-<div class="traq-text pre-wrap" data-traq-text>{{ block.text | linkify }}</div>
+<div class="traq-doc" data-traq-text>{{ block.html }}</div>
 {% else %}
 {% set link = block.link %}
 {% set state = load_json(link.state) or {} %}
@@ -66,3 +68,4 @@
 </div>
 {% endif %}
 {% endfor %}
+</div>

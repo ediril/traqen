@@ -119,22 +119,43 @@ document.querySelectorAll("[data-project-picker]").forEach((picker) => {
   });
 });
 
-// Editing a traq: Edit (in its ⋯ menu) switches its page to the edit box;
-// Cancel switches back.
-const setEditing = (editing) => {
+// Editing a traq: Edit (in its ⋯ menu) switches its page to the editor,
+// starting from the saved text; Cancel switches back, dropping the edits. The
+// editor loads the first time; until it has (or if it can't), the plain text
+// box is the editor.
+let editorLoad = null;
+const setEditing = async (editing) => {
   const view = document.querySelector("[data-view]");
   const edit = document.querySelector("[data-edit]");
   view.hidden = editing;
   edit.hidden = !editing;
-  if (editing) {
-    const box = edit.querySelector("[data-traq-box]");
-    box.grow();
-    box.querySelector("textarea").focus();
-  }
+  if (!editing) return;
+  const field = edit.querySelector("textarea[name=text]");
+  field.value = field.defaultValue;
+  editorLoad ??= import(edit.dataset.editorSrc)
+    .then(({ mountEditor }) => mountEditor(edit))
+    .catch(() => null);
+  const box = edit.querySelector("[data-traq-box]");
+  box.grow();
+  field.focus();
+  const editor = await editorLoad;
+  if (!editor) return;
+  editor.commands.setContent(field.value, { contentType: "markdown", emitUpdate: false });
+  editor.commands.focus("end");
 };
 document.querySelectorAll("[data-start-edit]").forEach((button) => {
   button.addEventListener("click", () => setEditing(true));
 });
+
+// Show the traq as the server sent it back (a whole page) after a change made
+// from its page: its content, and the text the next Edit starts from.
+const showTraq = (html) => {
+  const page = new DOMParser().parseFromString(html, "text/html");
+  document.querySelector("[data-view]").innerHTML = page.querySelector("[data-view]").innerHTML;
+  const saved = page.querySelector("[data-edit] textarea[name=text]");
+  const field = document.querySelector("[data-edit] textarea[name=text]");
+  if (saved && field) field.defaultValue = saved.defaultValue;
+};
 
 // The traq page shows the last known state at once; links due a check are
 // checked now, and the content is swapped for the fresh one (unless you've
@@ -153,14 +174,30 @@ document.addEventListener("submit", async (event) => {
   const form = event.target.closest("[data-acknowledge]");
   if (!form) return;
   event.preventDefault();
-  const view = form.closest("[data-view]");
   try {
     const response = await fetch(form.action, { method: "POST", body: new FormData(form) });
     if (!response.ok) throw new Error(response.statusText);
-    const page = new DOMParser().parseFromString(await response.text(), "text/html");
-    view.innerHTML = page.querySelector("[data-view]").innerHTML;
+    showTraq(await response.text());
   } catch {
     form.submit(); // fall back to a plain post and page load
+  }
+});
+// Ticking a checklist item on the traq's page saves it right away.
+document.addEventListener("change", async (event) => {
+  const box = event.target.closest("[data-task-line]");
+  if (!box) return;
+  const tasks = box.closest("[data-tasks]");
+  const body = new FormData();
+  body.append("csrf", document.querySelector("input[name=csrf]").value);
+  body.append("line", box.dataset.taskLine);
+  body.append("done", box.checked);
+  body.append("shown", tasks.dataset.textShown);
+  try {
+    const response = await fetch(tasks.dataset.tasks, { method: "POST", body });
+    if (!response.ok) throw new Error(response.statusText);
+    showTraq(await response.text());
+  } catch {
+    box.checked = !box.checked; // not saved
   }
 });
 // Opening a lit card's link (in a new tab) marks it as seen too.

@@ -113,7 +113,7 @@ def test_capture_into_a_new_traq(session, db):
     link = db.execute("SELECT * FROM links").fetchone()
     # The link is the first line, the selection follows; Slack can't be read,
     # so the traq is named after the link.
-    assert (traq["title"], traq["text"]) == (PAGE, f"{PAGE}\nselected text")
+    assert (traq["title"], traq["text"]) == (PAGE, f"{PAGE}\n\nselected text")
     assert link["url"] == PAGE
     # Checked after the response went out, but checked all the same.
     assert link["live"] == "unavailable" and link["checked_at"] is not None
@@ -186,7 +186,7 @@ def test_capture_into_an_existing_traq_appends_the_link(session, db):
     assert offered(session.page(capture_url())) == [traq_id]
     session.post("/capture", url=PAGE, traq=str(traq_id), note="why")
     text = db.execute("SELECT text FROM traqs WHERE id = ?", (traq_id,)).fetchone()[0]
-    assert text == f"Existing traq\nsome notes\n{PAGE}\nwhy"
+    assert text == f"Existing traq\n\nsome notes\n\n{PAGE}\n\nwhy"
 
 
 def test_duplicates_are_refused_and_nothing_is_saved(session, db):

@@ -23,8 +23,8 @@ CREATE TABLE IF NOT EXISTS projects (
     UNIQUE (user_id, name)
 );
 
--- A traq is what the user wrote (`text`, like a sticky note). Each line that is
--- just a link is tracked in `links`. `title` is derived from the first line
+-- A traq is what the user wrote (`text`, Markdown: see document.py). Each line
+-- that is just a link is tracked in `links`. `title` is derived from the first line
 -- (a link's page title when that line is a link). `updated_at` is when its
 -- text last changed.
 CREATE TABLE IF NOT EXISTS traqs (
@@ -69,6 +69,17 @@ CREATE TABLE IF NOT EXISTS links (
     UNIQUE (traq_id, page)
 );
 CREATE INDEX IF NOT EXISTS links_page ON links(page);
+
+-- Images in traqs (added in the editor), shown at /images/<id>. The id is
+-- random, so a traq's text names its images by it; an image no traq names any
+-- more is dropped a day later (see images.drop_unused).
+CREATE TABLE IF NOT EXISTS images (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    content_type TEXT NOT NULL,
+    data BLOB NOT NULL,
+    created_at TEXT NOT NULL
+);
 
 -- Per-user OAuth connections to work tools. Tokens are encrypted (crypto.py).
 CREATE TABLE IF NOT EXISTS connections (
@@ -115,7 +126,7 @@ def connect(path: Path) -> sqlite3.Connection:
 
 
 # Bump whenever SCHEMA changes in a way an existing database can't follow.
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 
 def init(path: Path) -> None:

@@ -12,20 +12,13 @@ from dataclasses import dataclass
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request
 
 from . import db as dbm
+from . import document
 from .auth import CSRF, current_user, get_db
 from .bookmarklet import MAX_NOTE
 from .live.links import classify, normalize_url, page_key
 from .shell import projects
 from .templating import templates
-from .traqs import (
-    append_line,
-    create,
-    find_traqs,
-    link_in,
-    name_link,
-    recent_traqs,
-    set_text,
-)
+from .traqs import create, find_traqs, name_link, recent_traqs, set_text
 from .web import check_links_later, chosen_project, get_traq, remember_timezone
 
 router = APIRouter()
@@ -49,7 +42,7 @@ class Page:
         return cls(
             normalize_url(url),
             " ".join(title.split())[:300],
-            note.strip()[:MAX_NOTE],
+            document.paragraphs(note)[:MAX_NOTE],
             popup,
         )
 
@@ -85,9 +78,10 @@ def choices(traqs, url: str, held: set[int]) -> list[dict]:
 
 
 def just_the_page(traq, url: str) -> bool:
-    lines = [line for line in traq["text"].splitlines() if line.strip()]
+    links = document.link_lines(traq["text"])
+    lines = [n for n, line in enumerate(traq["text"].split("\n")) if line.strip()]
     page = page_key(url)
-    return all((link := link_in(line)) and page_key(link) == page for line in lines)
+    return all(n in links and page_key(links[n]) == page for n in lines)
 
 
 def capture_form(
@@ -185,10 +179,10 @@ def capture_save(
         raise HTTPException(400, str(exc)) from exc
 
     # The page goes into the traq's text as a link line, with the selected
-    # text (if any) after it. A page is never added where it's already linked:
-    # not to a traq that has it, nor as a new traq in a project (or among traqs
-    # without one) where an open traq has it. Checking and saving happen
-    # together, so a save can't slip in between them.
+    # text (if any) after it, each a paragraph of its own. A page is never
+    # added where it's already linked: not to a traq that has it, nor as a new
+    # traq in a project (or among traqs without one) where an open traq has it.
+    # Checking and saving happen together, so a save can't slip in between.
     with dbm.transaction(db):
         remember_timezone(db, user, tz)
         held = holders(db, user["id"], page.url)
@@ -199,7 +193,7 @@ def capture_save(
             if any(t["project_id"] == project for t in held):
                 return capture_form(request, db, user, page, project, status=409)
             traq_id, new_links = create(
-                db, user["id"], project, append_line(page.url, page.note)
+                db, user["id"], project, document.append(page.url, page.note)
             )
         else:
             try:
@@ -210,9 +204,9 @@ def capture_save(
                 return capture_form(
                     request, db, user, page, already_there=True, status=409
                 )
-            text = append_line(target["text"], page.url)
+            text = document.append(target["text"], page.url)
             if page.note:
-                text = append_line(text, page.note)
+                text = document.append(text, page.note)
             traq_id, new_links = target["id"], set_text(db, target["id"], text)
         name_link(db, traq_id, page.url, page.title)
 

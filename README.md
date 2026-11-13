@@ -40,7 +40,15 @@ Without GitHub configured, public GitHub issues and PRs are still live (through 
 
 ### Live state
 
-Links are checked when added, when their traq is opened (if the last check is more than 5 minutes old), on "Refresh", and by a background refresher inside the app process every `TRAQEN_REFRESH_MINUTES`. Archived traqs are not refreshed. Run a single worker process so there is only one refresher.
+Links are checked when added, when their traq is opened (if the last check is more than a minute old), and by a background refresher inside the app process every `TRAQEN_REFRESH_MINUTES`. Archived traqs are not refreshed. Run a single worker process so there is only one refresher.
+
+### Traq editor
+
+A traq's text is stored as Markdown (CommonMark with tables, strikethrough, and checklists) and edited in a [Tiptap](https://tiptap.dev) editor, so you never see the Markdown. The editor is built into one file, `src/traqen/static/editor.js`, which is checked in; the app doesn't need Node to run. After changing anything under `editor/`, rebuild it (Node 22+):
+
+```bash
+cd editor && npm ci && npm run build
+```
 
 ### Versioning
 

@@ -17,7 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import auth, capture, connections, web
+from . import auth, capture, connections, images, web
 from . import db as dbm
 from .config import Settings, load_settings
 from .crypto import TokenCipher
@@ -109,6 +109,7 @@ def create_app(settings: Settings, *, background: bool = True) -> FastAPI:
     app.include_router(web.router)
     app.include_router(connections.router)
     app.include_router(capture.router)
+    app.include_router(images.router)
 
     @app.exception_handler(auth.LoginRequired)
     async def login_required(request: Request, exc: auth.LoginRequired):

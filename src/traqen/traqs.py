@@ -1,33 +1,20 @@
 """A traq's text, the links in it, and what it's called.
 
-A traq is what the user wrote, like a sticky note. Each line that is just a
-link is tracked (with live state) in `links`; a link inside a sentence stays
-plain text. A traq's text is only ever written through `create` and
-`set_text`, which keep its links and title in step with it.
+A traq is what the user wrote (Markdown, see `document`). Each line that is
+just a link is tracked (with live state) in `links`; a link inside a sentence
+stays part of the text. A traq's text is only ever written through `create`
+and `set_text`, which keep its links and title in step with it.
 """
 
-import re
 import sqlite3
 
 from . import db as dbm
-from .live.links import normalize_url, page_key
+from . import document
+from .document import link_in
+from .live.links import page_key
 from .live.state import describe_changes
 
 TITLE_LENGTH = 80
-
-# A pasted link: an explicit http(s) URL, or a bare host followed by a path.
-_LINK = re.compile(r"^(https?://\S+|(www\.)?[\w-]+(\.[\w-]+)+/\S*)$", re.IGNORECASE)
-
-
-def link_in(line: str) -> str | None:
-    """The normalized URL when `line` is just a link, else None."""
-    line = line.strip()
-    if not _LINK.match(line):
-        return None
-    try:
-        return normalize_url(line)
-    except ValueError:
-        return None
 
 
 def split_link(text: str) -> tuple[str | None, str]:
@@ -39,18 +26,14 @@ def split_link(text: str) -> tuple[str | None, str]:
 
 
 def tidy_new_text(text: str) -> str:
-    """A new traq typed as "link + note" on one line keeps the link on a line
-    of its own, so it's tracked."""
-    first, _, rest = text.strip().partition("\n")
+    """A new traq as typed in the New traq box (plain text), as Markdown: each
+    line a paragraph, and "link + note" on one line split so the link has a
+    line of its own, so it's tracked."""
+    first, _, rest = document.normalized(text).strip().partition("\n")
     url, note = split_link(first)
     if url and note:
         first = f"{url}\n{note}"
-    return f"{first}\n{rest}".strip()
-
-
-def append_line(text: str, line: str) -> str:
-    """Add a line at the end of a traq's text."""
-    return f"{text.rstrip()}\n{line}".strip()
+    return document.paragraphs(f"{first}\n{rest}")
 
 
 def link_pages(text: str) -> dict[str, str]:
@@ -58,10 +41,8 @@ def link_pages(text: str) -> dict[str, str]:
     the URL it's first written as; a second link to the same page stays a
     plain line."""
     pages: dict[str, str] = {}
-    for line in text.splitlines():
-        url = link_in(line)
-        if url:
-            pages.setdefault(page_key(url), url)
+    for url in document.link_lines(text).values():
+        pages.setdefault(page_key(url), url)
     return pages
 
 
@@ -83,8 +64,10 @@ def name_link(db: sqlite3.Connection, traq_id: int, url: str, title: str) -> Non
 
 
 def first_line(text: str) -> str:
-    """The first non-empty line, shortened at a word boundary if it's long."""
-    line = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    """The first non-empty line's text, shortened at a word boundary if it's
+    long."""
+    number = document.first_line_number(text)
+    line = "" if number is None else document.plain(text.split("\n")[number])
     if len(line) <= TITLE_LENGTH:
         return line
     cut = line[:TITLE_LENGTH].rsplit(" ", 1)[0] or line[:TITLE_LENGTH]
@@ -95,6 +78,7 @@ def create(
     db: sqlite3.Connection, user_id: int, project_id: int | None, text: str
 ) -> tuple[int, list[sqlite3.Row]]:
     """A new traq with this text; returns its id and its links (unchecked)."""
+    text = document.normalized(text)
     with dbm.transaction(db):
         now = dbm.stamp()
         traq_id = db.execute(
@@ -107,6 +91,7 @@ def create(
 
 def set_text(db: sqlite3.Connection, traq_id: int, text: str) -> list[sqlite3.Row]:
     """Replace a traq's text; returns the links it gained (unchecked)."""
+    text = document.normalized(text)
     with dbm.transaction(db):
         db.execute(
             "UPDATE traqs SET text = ?, updated_at = ? WHERE id = ? AND text != ?",
@@ -162,8 +147,8 @@ def update_title(db: sqlite3.Connection, traq_id: int) -> None:
     traq = db.execute("SELECT text FROM traqs WHERE id = ?", (traq_id,)).fetchone()
     if traq is None:  # deleted while one of its links was being checked
         return
-    line = next((ln for ln in traq["text"].splitlines() if ln.strip()), "")
-    url = link_in(line)
+    number = document.first_line_number(traq["text"])
+    url = document.link_lines(traq["text"]).get(number)
     if url:
         link = db.execute(
             "SELECT title FROM links WHERE traq_id = ? AND page = ?",
@@ -171,7 +156,7 @@ def update_title(db: sqlite3.Connection, traq_id: int) -> None:
         ).fetchone()
         title = (link and link["title"]) or url
     else:
-        title = first_line(line) or "Untitled"
+        title = first_line(traq["text"]) or "Untitled"
     db.execute("UPDATE traqs SET title = ? WHERE id = ?", (title, traq_id))
 
 
@@ -183,28 +168,35 @@ def link_changes(link) -> list[str]:
 
 
 def blocks(text: str, links: dict[str, dict]) -> list[dict]:
-    """The text as shown on the traq's page, after its title: runs of text, and
-    a link card wherever a line is a link. The first line is the title, so
-    it's left out, unless it's a link (its card still shows) or was too long
-    to be the title in full."""
-    lines = text.strip().splitlines()
-    if lines and not link_in(lines[0]) and len(lines[0].strip()) <= TITLE_LENGTH:
-        lines = lines[1:]
-    shown, run = [], []
+    """The text as shown on the traq's page, after its title: runs of text (as
+    HTML), and a link card wherever a line is a tracked link. The first line is
+    the title, so it's left out, unless it's a link (its card still shows) or
+    was too long to be the title in full."""
+    lines = text.split("\n")
+    cards = {
+        number: links[url]
+        for number, url in document.link_lines(text).items()
+        if url in links
+    }
+    title = document.first_line_number(text)
+    if (
+        title is not None
+        and title not in cards
+        and len(document.plain(lines[title])) <= TITLE_LENGTH
+    ):
+        lines[title] = ""
+    shown, start = [], 0
 
-    def flush():
-        if "\n".join(run).strip():
-            shown.append({"kind": "text", "text": "\n".join(run).strip("\n")})
-        run.clear()
+    def flush(end: int) -> None:
+        run = "\n".join(lines[start:end])
+        if run.strip():
+            shown.append({"kind": "text", "html": document.render(run, start)})
 
-    for line in lines:
-        url = link_in(line)
-        if url and url in links:
-            flush()
-            shown.append({"kind": "link", **links[url]})
-        else:
-            run.append(line)
-    flush()
+    for number in sorted(cards):
+        flush(number)
+        shown.append({"kind": "link", **cards[number]})
+        start = number + 1
+    flush(len(lines))
     return shown
 
 

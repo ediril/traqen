@@ -375,10 +375,55 @@ a:hover { text-decoration: underline; text-underline-offset: 2px; }
 .traq { max-width: 720px; }
 .traq-title { font-size: 30px; font-weight: 650; line-height: 1.25; letter-spacing: -0.025em; overflow-wrap: anywhere; }
 .traq-title.is-done { color: var(--bs-secondary-color); }
-.traq-text { font-size: 15.5px; line-height: 1.6; }
 .link-card { margin-bottom: 10px; }
-.link-card + .traq-text { margin-top: 18px; }
-.traq-text + .link-card { margin-top: 16px; }
+.link-card + .traq-doc { margin-top: 18px; }
+.traq-doc + .link-card { margin-top: 16px; }
+
+/* A traq's text, as shown and as edited. */
+.traq-doc, .traq-editor-doc { font-size: 15.5px; line-height: 1.6; overflow-wrap: anywhere; }
+:is(.traq-doc, .traq-editor-doc) > :last-child { margin-bottom: 0; }
+:is(.traq-doc, .traq-editor-doc) :is(p, ul, ol, blockquote, table, pre) { margin: 0 0 .75em; }
+:is(.traq-doc, .traq-editor-doc) :is(h1, h2, h3, h4, h5, h6) { font-size: 1.15em; font-weight: 650; letter-spacing: -0.01em; margin: 1.1em 0 .4em; }
+:is(.traq-doc, .traq-editor-doc) h1 { font-size: 1.35em; }
+:is(.traq-doc, .traq-editor-doc) :is(ul, ol) { padding-left: 1.5em; }
+:is(.traq-doc, .traq-editor-doc) li > :is(p, ul, ol) { margin-bottom: .15em; }
+:is(.traq-doc, .traq-editor-doc) blockquote { padding-left: 12px; border-left: 3px solid var(--bs-border-color); color: var(--bs-secondary-color); }
+:is(.traq-doc, .traq-editor-doc) code { font-size: .875em; padding: 1px 4px; border-radius: 4px; background: var(--t-hover); color: inherit; }
+:is(.traq-doc, .traq-editor-doc) pre { padding: 10px 12px; border-radius: 8px; background: var(--t-hover); }
+:is(.traq-doc, .traq-editor-doc) pre code { padding: 0; background: none; }
+:is(.traq-doc, .traq-editor-doc) img { max-width: 100%; height: auto; border-radius: 6px; }
+:is(.traq-doc, .traq-editor-doc) table { border-collapse: collapse; font-size: .94em; display: block; overflow-x: auto; max-width: 100%; }
+:is(.traq-doc, .traq-editor-doc) :is(th, td) { border: 1px solid var(--bs-border-color); padding: 5px 9px; vertical-align: top; min-width: 3em; }
+:is(.traq-doc, .traq-editor-doc) :is(th, td) p { margin: 0; }
+:is(.traq-doc, .traq-editor-doc) th { font-weight: 600; background: var(--t-hover); }
+/* Checklists: a checkbox instead of a bullet. */
+:is(.traq-doc li.task-item, .traq-editor-doc ul[data-type="taskList"] > li) { list-style: none; margin-left: -1.5em; display: flex; gap: .5em; align-items: baseline; }
+.traq-editor-doc ul[data-type="taskList"] > li > label { flex: none; }
+.traq-editor-doc ul[data-type="taskList"] > li > div { flex: 1; min-width: 0; }
+.traq-editor-doc ul[data-type="taskList"] > li > div > p { margin: 0; }
+.traq-editor-doc ul[data-type="taskList"] > li[data-checked="true"] > div,
+.traq-doc li.task-item:has(> .task-check:checked, > p > .task-check:checked) { color: var(--bs-secondary-color); text-decoration: line-through; }
+:is(.traq-doc, .traq-editor-doc) input[type="checkbox"] { accent-color: var(--bs-primary); flex: none; position: relative; top: .15em; margin: 0; cursor: pointer; }
+.traq-doc li.task-item > p { display: inline; margin: 0; }
+
+/* The editor: its first line is the traq's title, so it looks like one. */
+.traq-editor { border: 1px solid var(--bs-border-color); border-top: 0; border-radius: 0 0 10px 10px; background: var(--t-surface); }
+.traq-editor-doc { min-height: max(320px, 60vh); padding: 18px 20px; outline: none; }
+.traq-editor-doc > :first-child { font-size: 30px; font-weight: 650; line-height: 1.25; letter-spacing: -0.025em; margin: 0 0 .5em; }
+.traq-editor-doc p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--bs-secondary-color); float: left; height: 0; pointer-events: none; }
+.traq-editor-doc .selectedCell { background: rgba(var(--bs-primary-rgb), .12); }
+.editor-toolbar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; gap: 2px; padding: 5px 6px;
+  border: 1px solid var(--bs-border-color); border-radius: 10px 10px 0 0; background: var(--bs-body-bg);
+}
+.editor-toolbar .tool {
+  display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 7px; border: 0; border-radius: 6px;
+  background: none; color: var(--bs-secondary-color); font-size: 13px; line-height: 1;
+}
+.editor-toolbar .tool:hover { background: var(--t-hover); color: var(--bs-body-color); }
+.editor-toolbar .tool[aria-pressed="true"] { background: var(--t-pill); color: var(--bs-body-color); }
+.editor-toolbar .tool code { background: none; color: inherit; font-size: 12px; }
+.editor-toolbar .tool-gap { width: 1px; height: 18px; margin: 0 5px; background: var(--bs-border-color); }
 .link-card .card-body { gap: 12px; }
 .link-card .source-badge { margin-top: 1px; }
 .link-body { gap: 6px; }

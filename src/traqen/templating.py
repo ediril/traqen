@@ -1,4 +1,3 @@
-import re
 import secrets
 from datetime import datetime
 from pathlib import Path
@@ -7,7 +6,6 @@ from zoneinfo import ZoneInfo
 
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
-from markupsafe import Markup, escape
 
 from . import db as dbm
 from .live.links import LABELS
@@ -77,25 +75,6 @@ def domain(url: str | None) -> str:
     return (urlsplit(url).hostname or "").removeprefix("www.") if url else ""
 
 
-_INLINE_URL = re.compile(r"https?://[^\s<>\"']+[^\s<>\"'.,;:!?)\]]")
-
-
-def linkify(text: str) -> Markup:
-    """Escape text and make the links inside it clickable. Links are found in
-    the text as written, so `<https://…>` isn't read as part of the link."""
-    pieces, end = [], 0
-    for match in _INLINE_URL.finditer(text):
-        pieces += [
-            escape(text[end : match.start()]),
-            Markup('<a href="{0}" target="_blank" rel="noopener">{0}</a>').format(
-                match.group(0)
-            ),
-        ]
-        end = match.end()
-    pieces.append(escape(text[end:]))
-    return Markup("").join(pieces)
-
-
 templates.env.globals.update(
     csrf_token=csrf_token,
     static_url=static_url,
@@ -104,6 +83,4 @@ templates.env.globals.update(
     SOURCE_MARKS=SOURCE_MARKS,
     load_json=dbm.load_json,
 )
-templates.env.filters.update(
-    ago=ago, local_time=local_time, domain=domain, linkify=linkify
-)
+templates.env.filters.update(ago=ago, local_time=local_time, domain=domain)

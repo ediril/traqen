@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
 from . import db as dbm
-from . import traqs
+from . import document, images, traqs
 from .auth import CSRF, current_user, get_db, safe_next
 from .live import engine
 from .live.links import classify
@@ -197,6 +197,7 @@ def delete_project(
         project = get_project(db, user, project_id)
         if delete_traqs:
             db.execute("DELETE FROM traqs WHERE project_id = ?", (project["id"],))
+            images.drop_unused(db, user["id"])
         # Otherwise its traqs are kept without a project (ON DELETE SET NULL).
         db.execute("DELETE FROM projects WHERE id = ?", (project["id"],))
     # The page you were on may be gone (the project, or a traq deleted with it).
@@ -270,12 +271,13 @@ def traq_view(db: sqlite3.Connection, user, traq_id: int) -> dict:
             "link": link,
             "source": classify(link["url"]).source,
             "changes": link_changes(link),
-            "shown": shown_state(link["state"]),
+            "shown": fingerprint(link["state"]),
         }
         for link in rows
     }
     view = {
         "traq": traq,
+        "text_shown": fingerprint(traq["text"]),
         "blocks": blocks(traq["text"], links),
         # Whether to offer "Connect" or "Reconnect" where a link asks for one.
         "connected": {
@@ -289,10 +291,10 @@ def traq_view(db: sqlite3.Connection, user, traq_id: int) -> dict:
     return view
 
 
-def shown_state(state: str | None) -> str:
-    """Identifies the state a card showed, so acknowledging it never clears a
-    change that arrived after the page was shown."""
-    return hashlib.sha256((state or "").encode()).hexdigest()[:16]
+def fingerprint(value: str | None) -> str:
+    """Identifies what the page showed (a card's state, the traq's text), so
+    acting on it never touches a change that arrived after the page was shown."""
+    return hashlib.sha256((value or "").encode()).hexdigest()[:16]
 
 
 @router.get("/traqs/{traq_id}")
@@ -354,7 +356,7 @@ def acknowledge(
     ).fetchone()
     if link is None:
         raise HTTPException(404, "Link not found")
-    if shown_state(link["state"]) == shown:
+    if fingerprint(link["state"]) == shown:
         db.execute("UPDATE links SET seen_state = state WHERE id = ?", (link_id,))
     return back(f"/traqs/{traq_id}")
 
@@ -375,7 +377,28 @@ def edit_traq(
             (chosen_project(db, user, project_id, new_project), traq_id),
         )
         traqs.set_text(db, traq_id, text.strip())
+        images.drop_unused(db, user["id"])
     # Links added while editing are checked by the traq's page, which opens next.
+    return back(f"/traqs/{traq_id}")
+
+
+@router.post("/traqs/{traq_id}/tasks", dependencies=CSRF)
+def tick_task(
+    traq_id: int,
+    line: int = Form(...),
+    done: bool = Form(False),
+    shown: str = Form(...),
+    user=Depends(current_user),
+    db=Depends(get_db),
+):
+    """Tick (or untick) a checklist item from the traq's page. Only in the text
+    the page showed: if it's changed since, nothing is ticked, and the page
+    shows the text as it is now."""
+    with dbm.transaction(db):
+        traq = get_traq(db, user, traq_id)
+        ticked = document.tick(traq["text"], line, done)
+        if fingerprint(traq["text"]) == shown and ticked is not None:
+            traqs.set_text(db, traq_id, ticked)
     return back(f"/traqs/{traq_id}")
 
 
@@ -393,4 +416,5 @@ def toggle_done(traq_id: int, user=Depends(current_user), db=Depends(get_db)):
 def delete_traq(traq_id: int, user=Depends(current_user), db=Depends(get_db)):
     traq = get_traq(db, user, traq_id)
     db.execute("DELETE FROM traqs WHERE id = ?", (traq_id,))
+    images.drop_unused(db, user["id"])
     return back(f"/projects/{traq['project_id']}" if traq["project_id"] else "/")

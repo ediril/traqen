@@ -1,0 +1,22 @@
+{
+  "name": "traqen-editor",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/editor.js --bundle --format=esm --minify --legal-comments=none --outfile=../src/traqen/static/editor.js"
+  },
+  "dependencies": {
+    "@tiptap/core": "3.33.1",
+    "@tiptap/extension-image": "3.33.1",
+    "@tiptap/extension-link": "3.33.1",
+    "@tiptap/extension-list": "3.33.1",
+    "@tiptap/extension-table": "3.33.1",
+    "@tiptap/extensions": "3.33.1",
+    "@tiptap/markdown": "3.33.1",
+    "@tiptap/pm": "3.33.1",
+    "@tiptap/starter-kit": "3.33.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
