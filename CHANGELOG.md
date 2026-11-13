@@ -5,6 +5,7 @@
 - Checklist items tick from the traq's page.
 - Edit always starts from the saved text; Cancel drops your edits.
 - Traq lists show the most recently updated first, until you pick another order.
+- A traq's Edit, Mark done (or Reopen), and Delete are buttons in the bar above it, one click away, instead of in a ⋯ menu.
 
 ## 2026-11-12
 

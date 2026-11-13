@@ -438,6 +438,15 @@ a:hover { text-decoration: underline; text-underline-offset: 2px; }
   --bs-btn-hover-bg: transparent; --bs-btn-active-bg: transparent;
 }
 .traq-edit .dialog-bar { margin-top: 12px; }
+/* A traq's actions, in the bar above it. */
+.traq-actions { gap: 2px; }
+.action-btn {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500;
+  --bs-btn-padding-x: 9px; --bs-btn-padding-y: 5px; --bs-btn-border-width: 0;
+  --bs-btn-color: var(--bs-secondary-color); --bs-btn-hover-color: var(--bs-body-color); --bs-btn-hover-bg: var(--t-hover);
+  --bs-btn-active-color: var(--bs-body-color); --bs-btn-active-bg: var(--t-hover);
+}
+.action-btn.delete-btn { --bs-btn-hover-color: var(--bs-danger); }
 .source-badge {
   width: 24px; height: 24px; flex: none; display: inline-grid; place-items: center; padding: 0;
   border-radius: 7px; font: 700 10px/1 var(--bs-body-font-family); letter-spacing: -0.02em;

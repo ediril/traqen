@@ -119,7 +119,7 @@ document.querySelectorAll("[data-project-picker]").forEach((picker) => {
   });
 });
 
-// Editing a traq: Edit (in its ⋯ menu) switches its page to the editor,
+// Editing a traq: Edit switches its page to the editor,
 // starting from the saved text; Cancel switches back, dropping the edits. The
 // editor loads the first time; until it has (or if it can't), the plain text
 // box is the editor.
@@ -129,6 +129,7 @@ const setEditing = async (editing) => {
   const edit = document.querySelector("[data-edit]");
   view.hidden = editing;
   edit.hidden = !editing;
+  document.querySelector("[data-traq-actions]").hidden = editing;
   if (!editing) return;
   const field = edit.querySelector("textarea[name=text]");
   field.value = field.defaultValue;

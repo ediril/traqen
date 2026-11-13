@@ -3,7 +3,8 @@
 {% block title %}{{ traq.title }} · Traqen{% endblock %}
 
 {% block topbar %}
-{# Breadcrumb lined up with the content; the ⋯ menu near the window's edge. #}
+{# Breadcrumb lined up with the content; the traq's actions near the window's
+   edge, out of the way while it's being edited. #}
 <div class="page-bar d-flex align-items-center justify-content-between gap-3">
   <nav aria-label="Breadcrumb" class="min-w-0">
     <ol class="breadcrumb mb-0 flex-nowrap">
@@ -15,31 +16,20 @@
       <li class="breadcrumb-item active text-truncate" aria-current="page">{{ traq.title }}</li>
     </ol>
   </nav>
-  <div class="dropdown">
-    <button class="btn icon-btn" type="button" data-bs-toggle="dropdown" data-bs-offset="0,4" aria-expanded="false" aria-label="More actions" title="More">
-      {{ icon("dots", 16) }}
+  <div class="traq-actions d-flex align-items-center flex-shrink-0" data-traq-actions>
+    <button class="btn action-btn" type="button" data-start-edit title="Edit" aria-label="Edit">
+      {{ icon("pencil", 14) }}<span class="d-none d-sm-inline">Edit</span>
     </button>
-    <ul class="dropdown-menu dropdown-menu-end">
-      <li>
-        <button class="dropdown-item d-flex align-items-center gap-2" type="button" data-start-edit>
-          {{ icon("pencil", 14) }} Edit
-        </button>
-      </li>
-      <li>
-        <form method="post" action="/traqs/{{ traq.id }}/done">
-          {{ csrf() }}
-          <button class="dropdown-item d-flex align-items-center gap-2" type="submit">
-            {% if traq.status == "done" %}{{ icon("reopen", 14) }} Reopen{% else %}{{ icon("check", 14) }} Mark done{% endif %}
-          </button>
-        </form>
-      </li>
-      <li><hr class="dropdown-divider"></li>
-      <li>
-        <button class="dropdown-item text-danger d-flex align-items-center gap-2" type="button" data-bs-toggle="modal" data-bs-target="#delete-traq">
-          {{ icon("trash", 14) }} Delete traq
-        </button>
-      </li>
-    </ul>
+    <form method="post" action="/traqs/{{ traq.id }}/done">
+      {{ csrf() }}
+      {% set reopen = traq.status == "done" %}
+      <button class="btn action-btn" type="submit" title="{{ 'Reopen' if reopen else 'Mark done' }}" aria-label="{{ 'Reopen' if reopen else 'Mark done' }}">
+        {{ icon("reopen" if reopen else "check", 14) }}<span class="d-none d-sm-inline">{{ "Reopen" if reopen else "Mark done" }}</span>
+      </button>
+    </form>
+    <button class="btn action-btn delete-btn" type="button" data-bs-toggle="modal" data-bs-target="#delete-traq" title="Delete traq" aria-label="Delete traq">
+      {{ icon("trash", 14) }}
+    </button>
   </div>
 </div>
 {% endblock %}
