@@ -25,9 +25,10 @@
 {# Marks a traq that already has the page being saved (in place of a radio). #}
 {% macro has_page_icon() %}<span class="text-success d-inline-flex" role="img" aria-label="Already has this page">{{ icon("has-page", 16) }}</span>{% endmacro %}
 
-{# The sticky-style text box: grows as you type; drag the corner grip to make it taller. #}
-{% macro traq_box(value, placeholder) %}
-<div class="position-relative" data-traq-box>
+{# The sticky-style text box: grows as you type; drag the corner grip to make
+   it taller. `doc`: editing a whole traq, so it starts page-sized. #}
+{% macro traq_box(value, placeholder, doc=False) %}
+<div class="position-relative{% if doc %} doc{% endif %}" data-traq-box>
   <textarea class="form-control" name="text" rows="3" placeholder="{{ placeholder }}" aria-label="Traq text">{{ value }}</textarea>
   <span class="resize-grip" data-resize-grip title="Drag to expand" aria-hidden="true">
     <svg viewBox="0 0 10 10" width="10" height="10"><path d="M9 3L3 9M9 6.5L6.5 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>

@@ -54,7 +54,7 @@
 
   <form class="traq-edit" method="post" action="/traqs/{{ traq.id }}/edit" data-edit hidden>
     {{ csrf() }}
-    {{ traq_box(traq.text, "Write a note") }}
+    {{ traq_box(traq.text, "Write a note", doc=True) }}
     <div class="dialog-bar d-flex flex-wrap align-items-center gap-2">
       {{ project_picker(projects, traq.project_id) }}
       <button class="btn btn-link" type="button" data-toggle-edit>Cancel</button>

@@ -428,6 +428,9 @@ a:hover { text-decoration: underline; text-underline-offset: 2px; }
 }
 .resize-grip:hover { color: var(--bs-body-color); background: var(--t-hover); }
 [data-traq-box] textarea { resize: none; min-height: 98px; max-height: 70vh; padding: 10px 12px 12px; font-size: 15px; line-height: 1.5; }
+/* A whole traq being edited: page-sized, growing with the text (the page
+   scrolls, not the box). */
+[data-traq-box].doc textarea { min-height: max(320px, 65vh); max-height: none; padding: 14px 16px; }
 
 /* Bookmarklet save window */
 body.popup { background: var(--t-surface); }
