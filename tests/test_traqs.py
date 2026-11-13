@@ -484,8 +484,8 @@ def test_lists_sort_by_title_created_or_updated_and_remember_it(session, db):
     def headings(page):
         return [a["data-sort"] for a in page.select("[data-sort].is-sorted")]
 
-    assert rows(session.page("/")) == [cherry, apple, banana]  # newest first
-    assert rows(session.page("/?sort=updated")) == [banana, cherry, apple]
+    assert rows(session.page("/")) == [banana, cherry, apple]  # last updated first
+    assert rows(session.page("/?sort=created")) == [cherry, apple, banana]
     page = session.page("/?sort=title")
     assert rows(page) == [apple, banana, cherry]  # ignoring case
     assert headings(page) == ["title"]

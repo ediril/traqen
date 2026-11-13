@@ -4,6 +4,7 @@
 - A traq's text is stored as Markdown, rendered on its page with raw HTML shown as text. Existing traqs were converted, each line its own paragraph.
 - Checklist items tick from the traq's page.
 - Edit always starts from the saved text; Cancel drops your edits.
+- Traq lists show the most recently updated first, until you pick another order.
 
 ## 2026-11-12
 

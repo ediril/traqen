@@ -104,11 +104,11 @@ async def check_links_later(app, link_ids: list[int]) -> None:
 
 def list_sort(request: Request, sort: str = "") -> str:
     """How lists are sorted: as picked (a column heading), else as picked
-    last time, else newest first."""
+    last time, else most recently updated first."""
     if sort in SORTS:
         return sort
     remembered = request.cookies.get("sort")
-    return remembered if remembered in SORTS else "created"
+    return remembered if remembered in SORTS else "updated"
 
 
 def sorted_list(request, db, user, name: str, sort: str, **context):
