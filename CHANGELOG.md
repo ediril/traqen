@@ -2,7 +2,7 @@
 
 - Traqs are edited in a rich text editor (Tiptap): bold, italic, strikethrough, code, links, headings, quotes, bulleted, numbered, and checklists, tables, and images (pasted, dropped, or picked; up to 5 MB, stored in the database, shown only to you). The first line still is the title, and a link on a line of its own still becomes a card.
 - A traq's text is stored as Markdown, rendered on its page with raw HTML shown as text. Existing traqs were converted, each line its own paragraph.
-- Checklist items tick from the traq's page.
+- Checklist items tick from the traq's page. Their checkboxes are centered on the first line of their text, on the page and in the editor alike.
 - Edit always starts from the saved text; Cancel drops your edits.
 - Traq lists show the most recently updated first, until you pick another order.
 - A traq's Edit, Mark done (or Reopen), and Delete are buttons in the bar above it, one click away, instead of in a ⋯ menu.

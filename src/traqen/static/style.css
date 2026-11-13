@@ -397,13 +397,17 @@ a:hover { text-decoration: underline; text-underline-offset: 2px; }
 :is(.traq-doc, .traq-editor-doc) :is(th, td) p { margin: 0; }
 :is(.traq-doc, .traq-editor-doc) th { font-weight: 600; background: var(--t-hover); }
 /* Checklists: a checkbox instead of a bullet. */
-:is(.traq-doc li.task-item, .traq-editor-doc ul[data-type="taskList"] > li) { list-style: none; margin-left: -1.5em; display: flex; gap: .5em; align-items: baseline; }
-.traq-editor-doc ul[data-type="taskList"] > li > label { flex: none; }
+:is(.traq-doc li.task-item, .traq-editor-doc ul[data-type="taskList"] > li) { list-style: none; margin-left: -1.5em; display: flex; gap: .5em; align-items: flex-start; }
+/* The editor wraps each checkbox in a label: lay the checkbox out on its own,
+   as on the traq's page, so both line up with their text the same way. */
+.traq-editor-doc ul[data-type="taskList"] > li > label { display: contents; }
 .traq-editor-doc ul[data-type="taskList"] > li > div { flex: 1; min-width: 0; }
 .traq-editor-doc ul[data-type="taskList"] > li > div > p { margin: 0; }
 .traq-editor-doc ul[data-type="taskList"] > li[data-checked="true"] > div,
 .traq-doc li.task-item:has(> .task-check:checked, > p > .task-check:checked) { color: var(--bs-secondary-color); text-decoration: line-through; }
-:is(.traq-doc, .traq-editor-doc) input[type="checkbox"] { accent-color: var(--bs-primary); flex: none; position: relative; top: .15em; margin: 0; cursor: pointer; }
+/* The box's middle on the middle of the first line's capitals: they sit .74em
+   below the top of a 1.6-line-height line, so a 1em box goes .24em down. */
+:is(.traq-doc, .traq-editor-doc) input[type="checkbox"] { accent-color: var(--bs-primary); flex: none; width: 1em; height: 1em; margin: .24em 0 0; cursor: pointer; }
 .traq-doc li.task-item > p { display: inline; margin: 0; }
 
 /* The editor: its first line is the traq's title, so it looks like one. */
