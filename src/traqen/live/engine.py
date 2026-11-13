@@ -18,6 +18,7 @@ from .state import (
     CheckFailed,
     ConnectionRevoked,
     Snapshot,
+    describe_changes,
     unavailable,
 )
 
@@ -166,14 +167,49 @@ def _record(
         )
         return
 
+    current = db.execute(
+        "SELECT state, updated_at FROM links WHERE id = ?", (link["id"],)
+    ).fetchone()
+    if current is None:
+        return
     new_state = dbm.dump_json(outcome.state)
     db.execute(
         """
         UPDATE links SET live = 'live', live_reason = '', live_connect = NULL,
             live_fix_url = NULL, title = COALESCE(?, title), state = ?,
-            seen_state = COALESCE(seen_state, ?), checked_at = ?
+            seen_state = COALESCE(seen_state, ?), checked_at = ?, updated_at = ?
         WHERE id = ?
         """,
-        (outcome.state.get("title") or None, new_state, new_state, checked, link["id"]),
+        (
+            outcome.state.get("title") or None,
+            new_state,
+            new_state,
+            checked,
+            updated_at(current, outcome.state, checked),
+            link["id"],
+        ),
     )
     update_title(db, link["traq_id"])
+
+
+def updated_at(link: sqlite3.Row, state: dict, checked: str) -> str | None:
+    """When the linked thing last changed: its own last-updated time when the
+    source has one (GitHub, Jira); else when a check first saw it different."""
+    source_time = parse_source_time(state.get("updated"))
+    if source_time:
+        return source_time
+    if describe_changes(dbm.load_json(link["state"]), state):
+        return checked
+    return link["updated_at"]
+
+
+def parse_source_time(value) -> str | None:
+    """A source's own timestamp (`2026-10-01T10:00:00Z`, Jira's
+    `…T10:00:00.000+0000`) as stored; None when there isn't a usable one."""
+    try:
+        moment = dbm.parse_time(value)
+    except (TypeError, ValueError):
+        return None
+    if moment is None or moment.tzinfo is None:
+        return None
+    return dbm.stamp(moment)

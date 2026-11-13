@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS projects (
 
 -- A traq is what the user wrote (`text`, like a sticky note). Each line that is
 -- just a link is tracked in `links`. `title` is derived from the first line
--- (a link's page title when that line is a link).
+-- (a link's page title when that line is a link). `updated_at` is when its
+-- text last changed.
 CREATE TABLE IF NOT EXISTS traqs (
     id INTEGER PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -33,7 +34,8 @@ CREATE TABLE IF NOT EXISTS traqs (
     title TEXT NOT NULL,
     text TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'done')),
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS traqs_user_status ON traqs(user_id, status, created_at);
 
@@ -41,10 +43,13 @@ CREATE INDEX IF NOT EXISTS traqs_user_status ON traqs(user_id, status, created_a
 -- row per page (`page`, see live.links.page_key) under the URL it was first
 -- written as, with live state:
 --   state         current snapshot (JSON) from the last successful check
---   seen_state    snapshot as of the last time the user looked at the traq
+--   seen_state    snapshot as of the last time the user marked it seen
 --   live_connect  provider to connect to make an unavailable link live
 --   live_fix_url  page to fix access at (e.g. GitHub's SSO authorization)
--- "Changed since you last looked" is the difference between state and seen_state.
+--   updated_at    when the linked thing last changed: its own last-updated time
+--                 (GitHub, Jira), or when a check first saw it different (a
+--                 public page); NULL until known
+-- "Changed since you last saw it" is the difference between state and seen_state.
 CREATE TABLE IF NOT EXISTS links (
     id INTEGER PRIMARY KEY,
     traq_id INTEGER NOT NULL REFERENCES traqs(id) ON DELETE CASCADE,
@@ -59,6 +64,7 @@ CREATE TABLE IF NOT EXISTS links (
     state TEXT,
     seen_state TEXT,
     checked_at TEXT,
+    updated_at TEXT,
     created_at TEXT NOT NULL,
     UNIQUE (traq_id, page)
 );
@@ -109,7 +115,7 @@ def connect(path: Path) -> sqlite3.Connection:
 
 
 # Bump whenever SCHEMA changes in a way an existing database can't follow.
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 
 def init(path: Path) -> None:
@@ -136,7 +142,8 @@ def now() -> datetime:
 
 
 def stamp(moment: datetime | None = None) -> str:
-    return (moment or now()).isoformat()
+    """A time as stored: UTC, to the second, so stamps sort as text."""
+    return (moment or now()).astimezone(UTC).replace(microsecond=0).isoformat()
 
 
 def ago(delta: timedelta) -> str:

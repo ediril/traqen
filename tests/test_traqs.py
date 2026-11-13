@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import timedelta
 
 import pytest
 
@@ -414,3 +415,38 @@ def test_everything_shows_each_traqs_project(session, db):
     assert pills("/") == {in_acme: "Acme", loose: None}
     # In a project, every traq is that project's: no pills.
     assert pills(f"/projects/{project_id(db, 'Acme')}") == {in_acme: None}
+
+
+def test_lists_sort_by_title_created_or_updated_and_remember_it(session, db):
+    banana = session.create_traq("Banana")
+    apple = session.create_traq("apple")
+    cherry = session.create_traq("cherry", new_project="Fruit")
+    for traq_id, days in ((banana, 3), (apple, 2), (cherry, 1)):
+        moment = dbm.ago(timedelta(days=days))
+        db.execute(
+            "UPDATE traqs SET created_at = ?, updated_at = ? WHERE id = ?",
+            (moment, moment, traq_id),
+        )
+    # Editing the oldest makes it the last updated; moving one to another
+    # project doesn't change what it says.
+    session.post(f"/traqs/{banana}/edit", text="Banana\nripe", project_id="")
+    session.post(f"/traqs/{apple}/edit", text="apple", new_project="Fruit")
+
+    def headings(page):
+        return [a["data-sort"] for a in page.select("[data-sort].is-sorted")]
+
+    assert rows(session.page("/")) == [cherry, apple, banana]  # newest first
+    assert rows(session.page("/?sort=updated")) == [banana, cherry, apple]
+    page = session.page("/?sort=title")
+    assert rows(page) == [apple, banana, cherry]  # ignoring case
+    assert headings(page) == ["title"]
+
+    # The order picked sticks: on this list, other lists, and search.
+    assert rows(session.page("/")) == [apple, banana, cherry]
+    assert rows(session.page(f"/projects/{project_id(db, 'Fruit')}")) == [apple, cherry]
+    assert rows(session.page("/search?q=an")) == [banana]
+    page = session.page("/search?q=a&sort=created")
+    assert rows(page) == [apple, banana]
+    sort_link = page.select_one("[data-sort=title]")["href"]
+    assert "q=a" in sort_link and "sort=title" in sort_link  # keeps the search
+    assert rows(session.page("/")) == [cherry, apple, banana]

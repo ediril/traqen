@@ -76,6 +76,7 @@ def test_github_pull_request_is_live_and_changes_are_surfaced(session, db):
         "Comments": 1,
     }
     assert link["seen_state"] == link["state"]  # nothing new on first sight
+    assert link["updated_at"] == "2026-10-01T10:00:00+00:00"  # GitHub's own time
 
     page = session.get(f"/traqs/{traq_id}").text
     assert "Add SCIM endpoint" in page and "Review requested" in page
@@ -89,9 +90,9 @@ def test_github_pull_request_is_live_and_changes_are_surfaced(session, db):
     page = session.recheck(traq_id)
     assert "Review: Review requested → Approved" in page
     assert "2 new comments" in page
-    # Looking again doesn't clear it; "Got it" does.
+    # Looking again doesn't clear it; "Mark as seen" does.
     assert "Review requested → Approved" in session.get(f"/traqs/{traq_id}").text
-    got_it(session, traq_id)
+    mark_seen(session, traq_id)
     assert "Review requested → Approved" not in session.get(f"/traqs/{traq_id}").text
 
 
@@ -238,6 +239,7 @@ def test_jira_issue_is_live(session, settings, db):
     assert route.calls.last.request.headers["authorization"] == "Bearer jira-a"
     link = the_link(db)
     assert link["title"] == "SCIM-12: SCIM provisioning"
+    assert link["updated_at"] == "2026-10-01T10:00:00+00:00"  # Jira's own time
     assert dbm.load_json(link["state"])["fields"] == {
         "Status": "In Progress",
         "Assignee": "Ana Diaz",
@@ -351,8 +353,8 @@ def test_text_a_visitor_cant_see_is_not_the_page(session, public_dns, db):
     assert html(session.recheck(traq_id)).select("[data-change]") == []
 
 
-def got_it(session, traq_id, page=None):
-    """Click "Got it" on the (first) lit card, as shown on `page`."""
+def mark_seen(session, traq_id, page=None):
+    """Click "Mark as seen" on the (first) lit card, as shown on `page`."""
     page = page or session.page(f"/traqs/{traq_id}")
     form = page.select_one("[data-acknowledge]")
     return session.post(form["action"], shown=form.select_one("[name=shown]")["value"])
@@ -373,22 +375,22 @@ def test_a_change_stays_lit_until_you_clear_it(session, db, public_dns):
     for _ in range(2):
         assert "changed" in card()["class"]
         assert [c.text for c in card().select("[data-change]")] == ["Updated"]
-    assert got_it(session, traq_id).headers["location"] == f"/traqs/{traq_id}"
+    assert mark_seen(session, traq_id).headers["location"] == f"/traqs/{traq_id}"
     assert "settled" in card()["class"] and not card().select("[data-change]")
 
 
-def test_got_it_never_clears_a_change_you_havent_seen(session, db, public_dns):
+def test_mark_as_seen_never_clears_a_change_you_havent_seen(session, db, public_dns):
     session.mock_http.get(f"https://{PAGE_IP}/x").respond(html=page("A", "one"))
     traq_id = session.create_traq("https://status.example.com/x")
     session.mock_http.routes.clear()
     session.mock_http.get(f"https://{PAGE_IP}/x").respond(html=page("A", "two"))
     session.recheck(traq_id)
     shown = session.page(f"/traqs/{traq_id}")
-    # The page changes again after you opened it, then you click "Got it".
+    # The page changes again after you opened it, then you click "Mark as seen".
     session.mock_http.routes.clear()
     session.mock_http.get(f"https://{PAGE_IP}/x").respond(html=page("A", "three"))
     session.recheck(traq_id)
-    got_it(session, traq_id, shown)
+    mark_seen(session, traq_id, shown)
     card = session.page(f"/traqs/{traq_id}").select_one("[data-link-card]")
     assert "changed" in card["class"]
 
@@ -679,24 +681,29 @@ def test_live_check_is_only_for_your_own_traqs(session, sign_in_as):
     assert sign_in_as("ben").get(f"/traqs/{traq_id}/live").status_code == 404
 
 
-def test_lists_show_which_traqs_have_something_new(session, db, public_dns):
+def test_a_page_changing_makes_its_traq_the_last_updated(session, db, public_dns):
     session.mock_http.get(f"https://{PAGE_IP}/x").respond(html=page("A", "one"))
-    changing = session.create_traq("https://status.example.com/x", new_project="Acme")
-    quiet = session.create_traq("Notes", new_project="Acme")
-    acme = db.execute("SELECT id FROM projects").fetchone()[0]
+    watched = session.create_traq("https://status.example.com/x")
+    note = session.create_traq("Notes")
+    # The page traq was written first, the note a day later.
+    for traq_id, days in ((watched, 2), (note, 1)):
+        db.execute(
+            "UPDATE traqs SET created_at = ?, updated_at = ? WHERE id = ?",
+            (dbm.ago(timedelta(days=days)), dbm.ago(timedelta(days=days)), traq_id),
+        )
 
-    def lit(path):
+    def by_updated():
         return [
             int(row["href"].rsplit("/", 1)[1])
-            for row in session.page(path).select("[data-traq-row]")
-            if row.select_one("[data-news]")
+            for row in session.page("/?sort=updated").select("[data-traq-row]")
         ]
 
-    assert lit(f"/projects/{acme}") == []
+    assert by_updated() == [note, watched]
+    # Checked again with nothing new: still not updated.
+    session.recheck(watched)
+    assert by_updated() == [note, watched]
+
     session.mock_http.routes.clear()
     session.mock_http.get(f"https://{PAGE_IP}/x").respond(html=page("A", "two"))
-    session.recheck(changing)
-    assert lit(f"/projects/{acme}") == lit("/") == [changing]
-    assert quiet not in lit("/")
-    got_it(session, changing)
-    assert lit(f"/projects/{acme}") == []
+    session.recheck(watched)
+    assert by_updated() == [watched, note]

@@ -14,7 +14,7 @@ from .live import engine
 from .live.links import classify
 from .shell import render
 from .templating import templates
-from .traqs import blocks, find_traqs, link_changes, tidy_new_text, with_changes
+from .traqs import SORTS, blocks, find_traqs, link_changes, list_traqs, tidy_new_text
 
 router = APIRouter()
 
@@ -102,26 +102,39 @@ async def check_links_later(app, link_ids: list[int]) -> None:
 # Lists -----------------------------------------------------------------------
 
 
-def traq_list(request, db, user, project=None):
-    query = """
-        SELECT traqs.*, projects.name AS project_name FROM traqs
-        LEFT JOIN projects ON projects.id = traqs.project_id
-        WHERE traqs.user_id = ? AND traqs.status = 'open'
-    """
-    params: list = [user["id"]]
-    if project is not None:
-        query += " AND traqs.project_id = ?"
-        params.append(project["id"])
-    traqs = db.execute(
-        query + " ORDER BY traqs.created_at DESC, traqs.id DESC", params
-    ).fetchall()
-    return render(
+def list_sort(request: Request, sort: str = "") -> str:
+    """How lists are sorted: as picked (a column heading), else as picked
+    last time, else newest first."""
+    if sort in SORTS:
+        return sort
+    remembered = request.cookies.get("sort")
+    return remembered if remembered in SORTS else "created"
+
+
+def sorted_list(request, db, user, name: str, sort: str, **context):
+    """A list page, remembering how it's sorted for the next list you open."""
+    response = render(request, db, user, name, sort=sort, **context)
+    response.set_cookie(
+        "sort", sort, max_age=60 * 60 * 24 * 365, httponly=True, samesite="lax"
+    )
+    return response
+
+
+def traq_list(request, db, user, sort: str, project=None):
+    traqs = list_traqs(
+        db,
+        user["id"],
+        status="open",
+        sort=sort,
+        project_id=project["id"] if project else None,
+    )
+    return sorted_list(
         request,
         db,
         user,
         "home.html",
+        sort,
         traqs=traqs,
-        changed=with_changes(db, traqs),
         project=project,
         current_project=project["id"] if project else None,
         section=None if project else "all",
@@ -129,15 +142,24 @@ def traq_list(request, db, user, project=None):
 
 
 @router.get("/")
-def home(request: Request, user=Depends(current_user), db=Depends(get_db)):
-    return traq_list(request, db, user)
+def home(
+    request: Request,
+    sort: str = Depends(list_sort),
+    user=Depends(current_user),
+    db=Depends(get_db),
+):
+    return traq_list(request, db, user, sort)
 
 
 @router.get("/projects/{project_id}")
 def project_page(
-    request: Request, project_id: int, user=Depends(current_user), db=Depends(get_db)
+    request: Request,
+    project_id: int,
+    sort: str = Depends(list_sort),
+    user=Depends(current_user),
+    db=Depends(get_db),
 ):
-    return traq_list(request, db, user, get_project(db, user, project_id))
+    return traq_list(request, db, user, sort, get_project(db, user, project_id))
 
 
 @router.post("/projects/{project_id}/rename", dependencies=CSRF)
@@ -185,38 +207,29 @@ def delete_project(
 
 
 @router.get("/archive")
-def archive(request: Request, user=Depends(current_user), db=Depends(get_db)):
-    traqs = db.execute(
-        "SELECT * FROM traqs WHERE user_id = ? AND status = 'done' "
-        "ORDER BY created_at DESC, id DESC",
-        (user["id"],),
-    ).fetchall()
-    return render(
-        request,
-        db,
-        user,
-        "archive.html",
-        traqs=traqs,
-        changed=with_changes(db, traqs),
-        section="archive",
+def archive(
+    request: Request,
+    sort: str = Depends(list_sort),
+    user=Depends(current_user),
+    db=Depends(get_db),
+):
+    traqs = list_traqs(db, user["id"], status="done", sort=sort)
+    return sorted_list(
+        request, db, user, "archive.html", sort, traqs=traqs, section="archive"
     )
 
 
 @router.get("/search")
 def search(
-    request: Request, q: str = "", user=Depends(current_user), db=Depends(get_db)
+    request: Request,
+    q: str = "",
+    sort: str = Depends(list_sort),
+    user=Depends(current_user),
+    db=Depends(get_db),
 ):
     query = q.strip()
-    results = find_traqs(db, user["id"], query)
-    return render(
-        request,
-        db,
-        user,
-        "search.html",
-        q=query,
-        results=results,
-        changed=with_changes(db, results),
-    )
+    results = find_traqs(db, user["id"], query, sort=sort)
+    return sorted_list(request, db, user, "search.html", sort, q=query, results=results)
 
 
 # A traq ----------------------------------------------------------------------

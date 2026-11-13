@@ -1,9 +1,9 @@
 ## 2026-11-12
 
 - Opening a traq checks its links (unless they were checked in the last minute), instead of showing when each was last checked or offering "refresh now".
-- A link card lights up when something changed and stays lit until you click "Got it"; a card with nothing new is dimmed.
+- A link card lights up when something changed and stays lit until you click "Mark as seen" or open its link; a card with nothing new is dimmed.
 - Text a visitor can't see (hidden elements) no longer counts as a page's content, so it can't flag a change or show in the preview.
-- Traq lists (Everything, projects, Archive, search) show a green light before a traq with something new, until you click "Got it" on its cards.
+- Traq lists (Everything, projects, Archive, search) show when each traq was last updated (its text, or anything it links to: a GitHub or Jira item's own last-updated time, or when a check saw a page change), and sort by title, created, or updated from the column headings; the choice is remembered.
 - The breadcrumb on a traq's page reads as a link back to its project.
 
 ## 2026-10-25

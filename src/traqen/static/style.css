@@ -358,10 +358,15 @@ a:hover { text-decoration: underline; text-underline-offset: 2px; }
 .pre-wrap { white-space: pre-wrap; overflow-wrap: anywhere; }
 .clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .traq-row { padding: 11px 4px; }
-/* Before each traq's title: a green light when it has something new, else
-   an empty slot of the same size, so titles stay lined up. */
-.news-dot { flex: none; align-self: center; width: 8px; height: 8px; border-radius: 50%; }
-.news-dot.on { background: var(--bs-success); box-shadow: 0 0 0 3px rgba(var(--bs-success-rgb), .18); }
+/* Column headings over a list of traqs: click one to sort by it. */
+.traq-list-head { padding: 0 4px 6px; font-size: 12px; }
+.traq-list-head a { color: var(--bs-secondary-color); text-decoration: none; }
+.traq-list-head a:hover, .traq-list-head a.is-sorted { color: var(--bs-body-color); }
+.traq-list-head a.is-sorted { font-weight: 600; }
+.col-created, .col-updated { flex: none; white-space: nowrap; }
+.col-created { width: 9.5rem; }
+.col-updated { width: 4.5rem; text-align: right; }
+@media (max-width: 575.98px) { .col-created { display: none; } }
 .quiet-pill { font-size: 12px; font-weight: 500; color: var(--t-ink-2); background: var(--t-pill); }
 .project-pill { flex: none; max-width: 30%; }
 .mono-meta { font: 12px var(--bs-font-monospace); color: var(--bs-secondary-color); }

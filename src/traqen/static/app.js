@@ -147,8 +147,8 @@ document.querySelectorAll("[data-live-url]").forEach(async (view) => {
     // Offline or server down: keep showing the last known state.
   }
 });
-// "Got it" on a card clears what changed, in place (delegated: the content is
-// re-rendered by the live check above).
+// "Mark as seen" on a card clears what changed, in place (delegated: the
+// content is re-rendered by the live check above).
 document.addEventListener("submit", async (event) => {
   const form = event.target.closest("[data-acknowledge]");
   if (!form) return;
@@ -163,6 +163,14 @@ document.addEventListener("submit", async (event) => {
     form.submit(); // fall back to a plain post and page load
   }
 });
+// Opening a lit card's link (in a new tab) marks it as seen too.
+const markOpenedSeen = (event) => {
+  const link = event.target.closest("[data-open-link]");
+  if (event.button > 1 || !link) return;
+  link.closest("[data-link-card]").querySelector("[data-acknowledge]")?.requestSubmit();
+};
+document.addEventListener("click", markOpenedSeen);
+document.addEventListener("auxclick", markOpenedSeen); // middle click
 document.querySelectorAll("[data-toggle-edit]").forEach((button) => {
   button.addEventListener("click", () => setEditing(false));
 });

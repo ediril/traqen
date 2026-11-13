@@ -96,10 +96,11 @@ def create(
 ) -> tuple[int, list[sqlite3.Row]]:
     """A new traq with this text; returns its id and its links (unchecked)."""
     with dbm.transaction(db):
+        now = dbm.stamp()
         traq_id = db.execute(
-            "INSERT INTO traqs (user_id, project_id, title, text, created_at) "
-            "VALUES (?, ?, '', ?, ?)",
-            (user_id, project_id, text, dbm.stamp()),
+            "INSERT INTO traqs (user_id, project_id, title, text, created_at, "
+            "updated_at) VALUES (?, ?, '', ?, ?, ?)",
+            (user_id, project_id, text, now, now),
         ).lastrowid
         return traq_id, _sync_links(db, traq_id)
 
@@ -107,7 +108,10 @@ def create(
 def set_text(db: sqlite3.Connection, traq_id: int, text: str) -> list[sqlite3.Row]:
     """Replace a traq's text; returns the links it gained (unchecked)."""
     with dbm.transaction(db):
-        db.execute("UPDATE traqs SET text = ? WHERE id = ?", (text, traq_id))
+        db.execute(
+            "UPDATE traqs SET text = ?, updated_at = ? WHERE id = ? AND text != ?",
+            (text, dbm.stamp(), traq_id, text),
+        )
         return _sync_links(db, traq_id)
 
 
@@ -172,22 +176,10 @@ def update_title(db: sqlite3.Connection, traq_id: int) -> None:
 
 
 def link_changes(link) -> list[str]:
-    """What changed on a link since you last acknowledged it ("Got it")."""
+    """What changed on a link since you last marked it seen."""
     return describe_changes(
         dbm.load_json(link["seen_state"]), dbm.load_json(link["state"])
     )
-
-
-def with_changes(db: sqlite3.Connection, traqs) -> set[int]:
-    """Which of these traqs have a link with a change you haven't acknowledged
-    (the same rule that lights up its card)."""
-    ids = [traq["id"] for traq in traqs]
-    links = db.execute(
-        f"SELECT traq_id, state, seen_state FROM links "
-        f"WHERE traq_id IN ({', '.join('?' * len(ids))})",
-        ids,
-    )
-    return {link["traq_id"] for link in links if link_changes(link)}
 
 
 def blocks(text: str, links: dict[str, dict]) -> list[dict]:
@@ -216,15 +208,54 @@ def blocks(text: str, links: dict[str, dict]) -> list[dict]:
     return shown
 
 
+# A list row: the traq, its project's name, and when it was last updated: the
+# latest of its text changing and anything it links to changing.
+_LIST_ROW = """
+    traqs.*, projects.name AS project_name,
+    MAX(traqs.updated_at, COALESCE(
+        (SELECT MAX(l.updated_at) FROM links AS l WHERE l.traq_id = traqs.id), ''
+    )) AS last_updated
+"""
+
+# How a list can be sorted (the Title, Created, and Updated column headings).
+SORTS = {
+    "title": "traqs.title COLLATE NOCASE, traqs.id DESC",
+    "created": "traqs.created_at DESC, traqs.id DESC",
+    "updated": "last_updated DESC, traqs.id DESC",
+}
+
+
+def list_traqs(
+    db: sqlite3.Connection,
+    user_id: int,
+    *,
+    status: str,
+    sort: str,
+    project_id: int | None = None,
+) -> list[sqlite3.Row]:
+    """The user's open or done traqs, all of them or one project's."""
+    scope = "AND traqs.project_id = ?" if project_id is not None else ""
+    return db.execute(
+        f"""
+        SELECT {_LIST_ROW} FROM traqs
+        LEFT JOIN projects ON projects.id = traqs.project_id
+        WHERE traqs.user_id = ? AND traqs.status = ? {scope}
+        ORDER BY {SORTS[sort]}
+        """,
+        (user_id, status, *([project_id] if project_id is not None else [])),
+    ).fetchall()
+
+
 def find_traqs(
     db: sqlite3.Connection,
     user_id: int,
     query: str,
     *,
     open_only: bool = False,
+    sort: str = "created",
     limit: int = 100,
 ) -> list[sqlite3.Row]:
-    """Traqs whose title, text, or links mention `query`, newest first."""
+    """Traqs whose title, text, or links mention `query`."""
     query = query.strip()
     if not query:
         return []
@@ -236,11 +267,11 @@ def find_traqs(
     status = "AND traqs.status = 'open'" if open_only else ""
     return db.execute(
         f"""
-        SELECT DISTINCT traqs.*, projects.name AS project_name FROM traqs
+        SELECT DISTINCT {_LIST_ROW} FROM traqs
         LEFT JOIN links ON links.traq_id = traqs.id
         LEFT JOIN projects ON projects.id = traqs.project_id
         WHERE traqs.user_id = ? {status} AND ({where})
-        ORDER BY traqs.created_at DESC, traqs.id DESC LIMIT ?
+        ORDER BY {SORTS[sort]} LIMIT ?
         """,
         (user_id, *[pattern] * len(columns), limit),
     ).fetchall()

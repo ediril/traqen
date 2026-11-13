@@ -25,7 +25,7 @@
     <div class="link-body flex-grow-1 min-w-0 d-grid">
       {# 1. What it is: the title on one line, the domain right after it. #}
       <div class="d-flex align-items-baseline gap-2 min-w-0">
-        <a class="link-title text-truncate min-w-0" href="{{ link.url }}" target="_blank" rel="noopener" title="{{ link.title or link.url }}">{{ link.title or link.url }}</a>
+        <a class="link-title text-truncate min-w-0" data-open-link href="{{ link.url }}" target="_blank" rel="noopener" title="{{ link.title or link.url }}">{{ link.title or link.url }}</a>
         <span class="mono-meta flex-shrink-0">{{ link.url | domain }}</span>
       </div>
 
@@ -59,7 +59,7 @@
     <form method="post" action="/traqs/{{ traq.id }}/links/{{ link.id }}/acknowledge" data-acknowledge>
       {{ csrf() }}
       <input type="hidden" name="shown" value="{{ block.shown }}">
-      <button class="btn btn-sm acknowledge-btn" type="submit" title="Got it" aria-label="Got it: clear what changed">{{ icon("check", 14) }} Got it</button>
+      <button class="btn btn-sm acknowledge-btn" type="submit" title="Clear what changed">{{ icon("check", 14) }} Mark as seen</button>
     </form>
     {% endif %}
   </div>

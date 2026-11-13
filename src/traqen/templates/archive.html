@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% from "macros.html" import traq_rows %}
+{% from "macros.html" import traq_rows with context %}
 {% block title %}Archive · Traqen{% endblock %}
 {% block content %}
 <h1 class="page-title">Archive</h1>
 {% if traqs %}
-{{ traq_rows(traqs, user, changed) }}
+{{ traq_rows(traqs, user, sort) }}
 {% else %}
 <p class="text-body-secondary">Traqs you mark done show up here.</p>
 {% endif %}
