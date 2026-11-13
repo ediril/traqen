@@ -15,10 +15,10 @@ Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).
 ```bash
 uv venv && uv pip install -e ".[dev]"
 cp .env.example .env    # then fill in the secrets and OAuth clients
-.venv/bin/uvicorn traqen.app:app --reload --port 8000
+scripts/run_server.sh
 ```
 
-Open http://localhost:8000. The database is created on first start.
+Open http://localhost:8000. The script reloads the server when the code changes. If the port is taken, pass another one (`scripts/run_server.sh 8008`) and set `TRAQEN_BASE_URL` in `.env` to match, since the app's links and the bookmarklet point there. The database is created on first start.
 
 Sign-in is off by default in `.env.example` (`TRAQEN_SIGN_IN=none`): you are signed in automatically as a single local user. This only works with a localhost `TRAQEN_BASE_URL`; turning on Google sign-in is tracked in TODO.md.
 
